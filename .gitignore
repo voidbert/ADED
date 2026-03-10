@@ -1,0 +1,5 @@
+# TP1 intermediate files
+TP1/.venv
+TP1/dataset
+TP1/src/__pycache__
+TP1/*.tex
