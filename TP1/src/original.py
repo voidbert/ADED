@@ -103,9 +103,9 @@ class Original(Query):
                 F.col('Partition').contains('a100'),
                 F.when(
                     F.col('AllocCPUS') % 32 == 0,
-                    F.cast(int, F.col('AllocCPUS') / 32)
+                    (F.col('AllocCPUS') / 32).cast('int')
                 ).otherwise(
-                    F.cast(int, F.col('AllocCPUS') / 32) + 1
+                    (F.col('AllocCPUS') / 32).cast('int') + 1
                 )
             ).otherwise(
                 F.col('NNodes') # Non-GPU node
@@ -159,7 +159,7 @@ class Original(Query):
                 hours[cluster] = self.data.filter(F.col('Agency') != 'LOCAL')   \
                                           .filter(F.col('Period').isin(months)) \
                                           .groupby('cluster')                   \
-                                          .sum()                                \
+                                          .sum('totalJobSeconds')               \
                                           .filter(F.col('cluster') == cluster)  \
                                           .collect()[0]                         \
                                           .asDict()['sum(totalJobSeconds)']
