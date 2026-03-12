@@ -54,7 +54,6 @@ if __name__ == '__main__':
                                           .appName('deucalion-query')          \
                                           .getOrCreate()
 
-
     # Create temporary files for the outputs of the original query and the query being tested
     with tempfile.NamedTemporaryFile() as original_output:
         with tempfile.NamedTemporaryFile() as query_output:
