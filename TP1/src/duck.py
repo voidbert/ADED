@@ -24,7 +24,6 @@
 
 import duckdb
 import os
-import typing
 
 from contexts import Context, DuckDBContext
 from query import Query
@@ -43,7 +42,9 @@ class DuckDB(Query):
         ]
 
         # Load CSV files
-        connection = typing.cast(DuckDBContext, context).connection
+        assert isinstance(context, DuckDBContext)
+        connection = context.connection
+
         connection.execute(rf'''
             CREATE OR REPLACE VIEW jobs AS SELECT
                 regexp_replace(filename, '.*jobs_(.+)\.txt', '\1') AS Period,
@@ -104,7 +105,9 @@ class DuckDB(Query):
 
     def process_dataset(self, context: Context) -> None:
         # Group job count and hours by month, partition, account, state
-        connection = typing.cast(DuckDBContext, context).connection
+        assert isinstance(context, DuckDBContext)
+        connection = context.connection
+
         aggregated_results = connection.execute('''
             SELECT Period, Partition, Account, State, COUNT(*), SUM(totalJobSeconds)
             FROM jobs GROUP BY 1, 2, 3, 4

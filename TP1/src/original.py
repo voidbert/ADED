@@ -24,7 +24,6 @@
 from pyspark.sql import DataFrame
 import pyspark.sql.functions as F
 import os
-import typing
 import re
 
 from contexts import Context, SparkContext
@@ -37,7 +36,8 @@ class Original(Query):
 
     def load_dataset(self, context: Context, dataset_path: str) -> None:
         # Get Spark session from context
-        spark = typing.cast(SparkContext, context).spark
+        assert isinstance(context, SparkContext)
+        spark = context.spark
 
         # Iterate over all entries in the dataset directory
         year_data: DataFrame | None = None
@@ -51,7 +51,7 @@ class Original(Query):
 
                     # Load CSV file and add extra columns for job status and month
                     month_data = spark.read.csv(
-                        f'{dataset_path}/{entry.name}',
+                        os.path.join(dataset_path, entry.name),
                         sep='|', inferSchema=True, header=True
                     ).withColumn(
                         'EState', F.regexp_replace(F.col('State'), 'CANCELLED(.*)', 'CANCELLED')

@@ -21,12 +21,11 @@
 #
 # SOURCE FILE --------------------------------------------------------------------------------------
 
+import duckdb
 import gc
 import os
-from types import TracebackType
-
-import duckdb
 from pyspark.sql import SparkSession
+from types import TracebackType
 
 # Abstraction for a reusable Spark session or database connection.
 class Context:
@@ -57,8 +56,10 @@ class Context:
 class SparkContext(Context):
     def __init__(self, processes: int, **kwargs: object) -> None:
         if kwargs.get('events', ''):
-            # Create directory for stroing events
+            # Create directory for storing events
+            assert isinstance(kwargs['events'], str)
             events_dir = os.path.abspath(kwargs['events'])
+
             try:
                 os.mkdir(events_dir)
             except FileExistsError:
@@ -77,9 +78,10 @@ class SparkContext(Context):
                                              .getOrCreate()
 
     def between_runs_cleanup(self) -> None:
+        # Trigger Python's and Java's garbage collection to delete old data frames
         self.spark.catalog.clearCache()
         gc.collect()
-        self.spark.sparkContext._jvm.System.gc()
+        self.spark.sparkContext._jvm.System.gc() # type: ignore
 
     def final_cleanup(self) -> None:
         self.spark.stop()
