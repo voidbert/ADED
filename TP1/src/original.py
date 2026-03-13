@@ -62,11 +62,11 @@ class Original(Query):
                         'Period', F.lit(month)
                     )
 
-                # Concatenate CSV files from all months
-                if year_data is None:
-                    year_data = month_data
-                else:
-                    year_data = year_data.union(month_data)
+                    # Concatenate CSV files from all months
+                    if year_data is None:
+                        year_data = month_data
+                    else:
+                        year_data = year_data.union(month_data)
 
         assert isinstance(year_data, DataFrame)
         self.data = year_data
