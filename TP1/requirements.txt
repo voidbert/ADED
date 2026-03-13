@@ -1,2 +1,3 @@
 pyspark==4.1.1
 python-dateutil==2.9.0.post0
+duckdb=1.5.0

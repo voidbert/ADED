@@ -25,6 +25,7 @@ import gc
 import os
 from types import TracebackType
 
+import duckdb
 from pyspark.sql import SparkSession
 
 # Abstraction for a reusable Spark session or database connection.
@@ -82,3 +83,11 @@ class SparkContext(Context):
 
     def final_cleanup(self) -> None:
         self.spark.stop()
+
+# Abstraction for reusable DuckDB connection.
+class DuckDBContext(Context):
+    def __init__(self, processes: int, **kwargs: object) -> None:
+        self.connection = duckdb.connect(':memory:')
+
+    def final_cleanup(self) -> None:
+        self.connection.close()
