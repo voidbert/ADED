@@ -26,7 +26,6 @@
 import argparse
 import calendar
 import datetime
-from pyspark.sql import SparkSession
 
 import util
 
@@ -60,11 +59,8 @@ if __name__ == '__main__':
     year            = args.year    or today.year
     first_year_date = args.start   or datetime.date(year, 1, 1)
 
-    # Run query
+    # Initialize context and run query
     spark_processes = util.get_spark_num_processes()
-    spark           = SparkSession.builder.master(f'local[{spark_processes}]') \
-                                          .appName('deucalion-query')          \
-                                          .getOrCreate()
-
-    query = query_class(month, year, first_year_date)
-    query.run(spark, args.dataset, outfile)
+    with query_class.create_context(spark_processes) as context:
+        query = query_class(month, year, first_year_date)
+        query.run(context, args.dataset, outfile)

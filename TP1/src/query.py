@@ -26,10 +26,11 @@ import abc
 import calendar
 from datetime import date, datetime
 from dateutil.relativedelta import relativedelta
-from pyspark.sql import SparkSession
+
+from contexts import Context
 
 # Deucalion report query -- abstract base class.
-# 
+#
 # This class fills in basic report parameters that do not change between query implementations.
 #
 # Query execution methods can be overridden to develop query implementations with different
@@ -39,7 +40,7 @@ class Query(abc.ABC):
         # Get calendar month name abbreviations
         month_abbreviations = list(calendar.month_abbr)
 
-        # Determine range of months to be analyzed
+        # Determine ranges of months to be analyzed
         self.tag_months = {
             '':          [month_abbreviations[month]],
             'Trimester': month_abbreviations[1:month + 1] if month < 3 else
@@ -154,20 +155,26 @@ class Query(abc.ABC):
             'hoursYear':      '{\\inteval{\\ndaysYear * 24}}'
         }
 
+    # Creates a context (e.g.: Spark session) that can be used for multiple query executions
+    @staticmethod
+    @abc.abstractmethod
+    def create_context(processes: int) -> Context:
+        pass
+
     # Runs the query: loads a dataset, processes it, and writes the results to a LaTeX file
-    def run(self, spark: SparkSession, dataset_path: str, output_file: str) -> None:
+    def run(self, spark: Context, dataset_path: str, output_file: str) -> None:
         self.load_dataset(spark, dataset_path)
         self.process_dataset(spark)
         self.output_result(output_file)
 
     # Loads a dataset directory
     @abc.abstractmethod
-    def load_dataset(self, spark: SparkSession, dataset_path: str) -> None:
+    def load_dataset(self, spark: Context, dataset_path: str) -> None:
         pass
 
     # Fills in query output parameters from an already loaded dataset
     @abc.abstractmethod
-    def process_dataset(self, spark: SparkSession) -> None:
+    def process_dataset(self, spark: Context) -> None:
         pass
 
     # Writes the query results (output parameters) to an output file

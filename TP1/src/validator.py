@@ -48,36 +48,39 @@ if __name__ == '__main__':
         print('Available queries:', ', '.join(queries), file=sys.stderr)
         sys.exit(1)
 
-    # Initialize Spark
+    # Initialize contexts
     spark_processes = util.get_spark_num_processes()
-    spark           = SparkSession.builder.master(f'local[{spark_processes}]') \
-                                          .appName('deucalion-query')          \
-                                          .getOrCreate()
+    with original.Original.create_context(spark_processes) as original_context:
+        with query_class.create_context(spark_processes) as query_context:
 
-    # Create temporary files for the outputs of the original query and the query being tested
-    with tempfile.NamedTemporaryFile() as original_output:
-        with tempfile.NamedTemporaryFile() as query_output:
-            year_start_date = datetime.date(YEAR, 1, 1)
+            # Create temporary files for the outputs of the original query and the query being
+            # tested
+            with tempfile.NamedTemporaryFile() as original_output:
+                with tempfile.NamedTemporaryFile() as query_output:
+                    year_start_date = datetime.date(YEAR, 1, 1)
 
-            # Test results for each month
-            for month in range(1, 13):
-                month_name = list(calendar.month_name)[month]
-                print(f'Testing {month_name}')
+                    # Test results for each month
+                    for month in range(1, 13):
+                        month_name = list(calendar.month_name)[month]
+                        print(f'Testing {month_name}')
 
-                original_query = original.Original(month, YEAR, year_start_date)
-                original_query.run(spark, dataset_path, original_output.name)
+                        original_query = original.Original(month, YEAR, year_start_date)
+                        original_query.run(original_context, dataset_path, original_output.name)
 
-                query = query_class(month, YEAR, year_start_date)
-                query.run(spark, dataset_path, query_output.name)
+                        query = query_class(month, YEAR, year_start_date)
+                        query.run(query_context, dataset_path, query_output.name)
 
-                # Compare query outputs
-                diff_result = subprocess.run(
-                    ['diff', '--color=always', '-u', original_output.name, query_output.name],
-                    capture_output=True
-                ).stdout.decode('utf-8')
+                        # Compare query outputs
+                        diff_result = subprocess.run(
+                            [
+                                'diff', '--color=always', '-u',
+                                original_output.name, query_output.name
+                            ],
+                            capture_output=True
+                        ).stdout.decode('utf-8')
 
-                # Fail if outputs differ
-                if diff_result:
-                    print(f'Queries do not match for month {month_name}', file=sys.stderr)
-                    print(diff_result, file=sys.stderr)
-                    sys.exit(1)
+                        # Fail if outputs differ
+                        if diff_result:
+                            print(f'Queries do not match for month {month_name}', file=sys.stderr)
+                            print(diff_result, file=sys.stderr)
+                            sys.exit(1)

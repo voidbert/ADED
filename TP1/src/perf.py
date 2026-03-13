@@ -26,7 +26,6 @@
 import argparse
 import csv
 import datetime
-from pyspark.sql import SparkSession
 import socket
 import time
 
@@ -51,13 +50,13 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--outfile', nargs='?')
     parser.add_argument('-w', '--warmup',  nargs='?', type=int)
     parser.add_argument('-r', '--runs',    nargs='?', type=int)
-    parser.add_argument('-n', '--nprocs', nargs='?', type=__parse_thread_list)
+    parser.add_argument('-n', '--nprocs',  nargs='?', type=__parse_thread_list)
 
     args = parser.parse_args()
 
     # Use default arguments if arguments are not set
     query_class = queries[args.query]
-    output_file = args.outfile or 'perf.csv' 
+    output_file = args.outfile or 'perf.csv'
     warmup_runs = args.warmup  or 0
     runs        = args.runs    or 3
     nprocs      = args.nprocs  or [util.get_spark_num_processes()]
@@ -66,7 +65,7 @@ if __name__ == '__main__':
     hostname = socket.gethostname()
 
     with open(output_file, 'w') as csv_file:
-        csv_writer = csv.writer(csv_file)
+        csv_writer = csv.writer(csv_file, lineterminator='\n')
         csv_writer.writerow([
             'HOSTNAME',
             'NPROC',
@@ -75,44 +74,42 @@ if __name__ == '__main__':
             'DATASET_LOAD_TIME',
             'DATASET_PROCESS_TIME'
         ])
+        csv_file.flush()
 
         for nproc in nprocs:
-            # Create (and time) Spark session creation
-            spark_init_start = time.monotonic()
-            spark            = SparkSession.builder.master(f'local[{nproc}]')  \
-                                                   .appName('deucalion-query') \
-                                                   .getOrCreate()
-            spark_init_end   = time.monotonic()
+            # Create (and time) context creation
+            context_init_start = time.monotonic()
+            with query_class.create_context(nproc) as context:
+                context_init_end = time.monotonic()
 
-            for run in range(warmup_runs + runs):
-                # User feedback
-                if run >= warmup_runs:
-                    print(f'Running: {nproc} processes -- run {run + 1 - warmup_runs}')
-                else:
-                    print(f'Running: {nproc} processes -- warmup run {run + 1}')
+                for run in range(warmup_runs + runs):
+                    # User feedback
+                    if run >= warmup_runs:
+                        print(f'Running: {nproc} processes -- run {run + 1 - warmup_runs}')
+                    else:
+                        print(f'Running: {nproc} processes -- warmup run {run + 1}')
 
-                # Measure dataset loading and query execution times
-                t0 = time.monotonic()
+                    # Measure dataset loading and query execution times
+                    t0 = time.monotonic()
 
-                query = query_class(MONTH, YEAR, datetime.date(YEAR, 1, 1))
-                query.load_dataset(spark, args.dataset)
+                    query = query_class(MONTH, YEAR, datetime.date(YEAR, 1, 1))
+                    query.load_dataset(context, args.dataset)
 
-                t1 = time.monotonic()
+                    t1 = time.monotonic()
 
-                query.process_dataset(spark)
+                    query.process_dataset(context)
 
-                t2 = time.monotonic()
+                    t2 = time.monotonic()
 
-                # Write non-warmup run performance data to the CSV file
-                if run >= warmup_runs:
-                    csv_writer.writerow([
-                        hostname,
-                        nproc,
-                        run,
-                        spark_init_end - spark_init_start,
-                        t1 - t0,
-                        t2 - t1
-                    ])
+                    # Write non-warmup run performance data to the CSV file
+                    if run >= warmup_runs:
+                        csv_writer.writerow([
+                            hostname,
+                            nproc,
+                            run,
+                            context_init_end - context_init_start,
+                            t1 - t0,
+                            t2 - t1
+                        ])
 
-            # Stop Spark before changing number of processes
-            spark.stop()
+                        csv_file.flush()

@@ -21,18 +21,26 @@
 #
 # SOURCE FILE --------------------------------------------------------------------------------------
 
-from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql import DataFrame
 import pyspark.sql.functions as F
 import os
+import typing
 import re
 
+from contexts import Context, SparkContext
 from query import Query
 
 class Original(Query):
-    def load_dataset(self, spark: SparkSession, dataset_path: str) -> None:
-        year_data: DataFrame | None = None
+    @staticmethod
+    def create_context(processes: int) -> Context:
+        return SparkContext(processes)
+
+    def load_dataset(self, context: Context, dataset_path: str) -> None:
+        # Get Spark session from context
+        spark = typing.cast(SparkContext, context).spark
 
         # Iterate over all entries in the dataset directory
+        year_data: DataFrame | None = None
         with os.scandir(dataset_path) as entries:
             for entry in entries:
 
@@ -63,7 +71,7 @@ class Original(Query):
         assert isinstance(year_data, DataFrame)
         self.data = year_data
 
-    def process_dataset(self, spark: SparkSession) -> None:
+    def process_dataset(self, _: Context) -> None:
         # Add column for job cluster (ARM, AMD, or GPU) based on partition name
         self.data = self.data.withColumn(
             'cluster',
