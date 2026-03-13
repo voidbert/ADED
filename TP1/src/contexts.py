@@ -87,7 +87,9 @@ class SparkContext(Context):
 # Abstraction for reusable DuckDB connection.
 class DuckDBContext(Context):
     def __init__(self, processes: int, **kwargs: object) -> None:
+        # Initialize an in-memory database and use a set number of threads
         self.connection = duckdb.connect(':memory:')
+        self.connection.execute(f'SET THREADS TO {processes}')
 
     def between_runs_cleanup(self) -> None:
         # Delete all views
