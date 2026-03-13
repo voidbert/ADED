@@ -21,6 +21,8 @@
 #
 # SOURCE FILE --------------------------------------------------------------------------------------
 
+import gc
+import os
 from types import TracebackType
 
 from pyspark.sql import SparkSession
@@ -52,10 +54,26 @@ class Context:
 
 # Abstraction for reusable spark session.
 class SparkContext(Context):
-    def __init__(self, processes: int) -> None:
-        self.spark = SparkSession.builder.master(f'local[{processes}]') \
-                                         .appName('deucalion-query')    \
-                                         .getOrCreate()
+    def __init__(self, processes: int, **kwargs: object) -> None:
+        if kwargs.get('events', ''):
+            # Create directory for stroing events
+            events_dir = os.path.abspath(kwargs['events'])
+            try:
+                os.mkdir(events_dir)
+            except FileExistsError:
+                pass
+
+            # Create Spark session with event logging
+            self.spark = SparkSession.builder.master(f'local[{processes}]')            \
+                                             .appName('deucalion-query')               \
+                                             .config('spark.eventLog.enabled', 'true') \
+                                             .config('spark.eventLog.dir', events_dir) \
+                                             .getOrCreate()
+        else:
+            # Create Spark session without event logging
+            self.spark = SparkSession.builder.master(f'local[{processes}]') \
+                                             .appName('deucalion-query')    \
+                                             .getOrCreate()
 
     def final_cleanup(self) -> None:
         self.spark.stop()

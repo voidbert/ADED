@@ -47,6 +47,7 @@ if __name__ == '__main__':
     parser.add_argument('query', choices=queries)
     parser.add_argument('dataset')
 
+    parser.add_argument('-e', '--events',  nargs='?')
     parser.add_argument('-o', '--outfile', nargs='?')
     parser.add_argument('-w', '--warmup',  nargs='?', type=int)
     parser.add_argument('-r', '--runs',    nargs='?', type=int)
@@ -79,7 +80,7 @@ if __name__ == '__main__':
         for nproc in nprocs:
             # Create (and time) context creation
             context_init_start = time.monotonic()
-            with query_class.create_context(nproc) as context:
+            with query_class.create_context(nproc, events=args.events) as context:
                 context_init_end = time.monotonic()
 
                 for run in range(warmup_runs + runs):
