@@ -75,5 +75,10 @@ class SparkContext(Context):
                                              .appName('deucalion-query')    \
                                              .getOrCreate()
 
+    def between_runs_cleanup(self) -> None:
+        self.spark.catalog.clearCache()
+        gc.collect()
+        self.spark.sparkContext._jvm.System.gc()
+
     def final_cleanup(self) -> None:
         self.spark.stop()
