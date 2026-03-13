@@ -89,5 +89,11 @@ class DuckDBContext(Context):
     def __init__(self, processes: int, **kwargs: object) -> None:
         self.connection = duckdb.connect(':memory:')
 
+    def between_runs_cleanup(self) -> None:
+        # Delete all views
+        view_names = self.connection.execute('SELECT view_name FROM duckdb_views').fetchall()
+        for view_name_tuple in view_names:
+            self.connection.execute(f'DROP VIEW IF EXISTS {view_name_tuple[0]}')
+
     def final_cleanup(self) -> None:
         self.connection.close()
