@@ -113,3 +113,5 @@ if __name__ == '__main__':
                         ])
 
                         csv_file.flush()
+
+                    context.between_runs_cleanup()
