@@ -57,7 +57,7 @@ class DuckDB(Query):
                         'COMPLETED'
                     ELSE
                         'FAILED'
-                END AS State,
+                END AS COMPLETED,
 
                 CASE
                     WHEN Partition LIKE '%arm%'  THEN
@@ -66,7 +66,7 @@ class DuckDB(Query):
                         'gpu'
                     ELSE
                         'amd'
-                END AS Partition,
+                END AS cluster,
 
                 CASE
                     WHEN Account LIKE 'f%'  THEN
@@ -75,7 +75,7 @@ class DuckDB(Query):
                         'EHPC'
                     ELSE
                         'LOCAL'
-                END AS Account,
+                END AS Agency,
 
                 CASE
                     WHEN Partition LIKE '%a100%' THEN
@@ -106,7 +106,7 @@ class DuckDB(Query):
         connection = context.connection
 
         aggregated_results = connection.execute('''
-            SELECT Period, Partition, Account, State, COUNT(*), SUM(totalJobSeconds)
+            SELECT Period, cluster, Agency, COMPLETED, COUNT(*), SUM(totalJobSeconds)
             FROM jobs GROUP BY 1, 2, 3, 4
         ''').fetchall()
 
@@ -116,28 +116,28 @@ class DuckDB(Query):
 
             for row in aggregated_results:
                 if row[0] in months:
-                    row_cluster = row[1]
-                    row_account = row[2]
-                    row_state   = row[3]
-                    row_jobs    = row[4]
-                    row_hours   = row[5]
+                    row_cluster   = row[1]
+                    row_agency    = row[2]
+                    row_completed = row[3]
+                    row_jobs      = row[4]
+                    row_seconds   = row[5]
 
                     # Count complete and failed jobs per cluster
-                    if row_state == 'COMPLETED':
+                    if row_completed == 'COMPLETED':
                         self.output_parameters[f'{row_cluster}CompletedJobs{tag}'] += row_jobs
                     else:
                         self.output_parameters[f'{row_cluster}FailedJobs{tag}'] += row_jobs
 
                     # Count jobs and hours per cluster
-                    if row_account != 'LOCAL':
-                        hours[row_cluster]                                += row_hours
+                    if row_agency != 'LOCAL':
+                        hours[row_cluster]                                += row_seconds
                         self.output_parameters[f'{row_cluster}Jobs{tag}'] += row_jobs
 
                     for k, v in hours.items():
                         self.output_parameters[f'{k}usedhours{tag}'] = v / 3600
 
                     # Count EuroHPC jobs and hours
-                    if row_account == 'EHPC':
+                    if row_agency == 'EHPC':
                         self.output_parameters[f'{row_cluster}usedhoursEuroHPC{tag}'] += \
-                            row_hours / 3600
+                            row_seconds / 3600
                         self.output_parameters[f'{row_cluster}JobsEuroHPC{tag}'] += row_jobs
