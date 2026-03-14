@@ -26,6 +26,7 @@
 import calendar
 import datetime
 from pyspark.sql import SparkSession
+import re
 import subprocess
 import sys
 import tempfile
@@ -36,6 +37,46 @@ import util
 # Hardcoded year for report results. It only influences output parameters related to time ranges,
 # so it need not be changed for using other years' datasets.
 YEAR = 2025
+
+# Allowed relative floating-point error (0.1 %)
+MAX_RELATIVE_ERROR = 0.001
+
+# Runs the diff command on two files
+def diff_files(original_path: str, modified_path: str) -> str:
+    return subprocess.run(
+        ['diff', '--color=always', '-u', original_path, modified_path],
+        capture_output=True
+    ).stdout.decode('utf-8')
+
+# Checks if query differences are attributable to differences in floating-point arithmetic
+def check_diff_for_fp_errors(diff_result: str, max_relative_error: float) -> bool:
+    # Parse differences between lines
+    original_differences = dict(re.findall(r'\n[^\-]*-\\def\\(\w*){([^}]*)}', diff_result))
+    query_differences    = dict(re.findall(r'\n[^+]*\+\\def\\(\w*){([^}]*)}', diff_result))
+
+    # Check for additional or missing parameters
+    if set(original_differences) != set(query_differences):
+        return False
+
+    print(original_differences, query_differences) # TODO - remove
+
+    # Check for floating-point differences
+    for parameters, original_value in original_differences.items():
+        # Check floating point values
+        try:
+            original_value_fp = float(original_value)
+            query_value_fp    = float(query_differences[parameters])
+            error             = abs(original_value_fp - query_value_fp) / original_value_fp
+
+            if error > max_relative_error:
+                return False
+
+        except ValueError, ZeroDivisionError:
+            # Casting errors -> not floats -> string differences -> fail
+            # Division error -> original is 0 and the other value is not -> fail
+            return False
+
+    return True
 
 if __name__ == '__main__':
     # Parse command line arguments
@@ -64,6 +105,7 @@ if __name__ == '__main__':
                         month_name = list(calendar.month_name)[month]
                         print(f'Testing {month_name}')
 
+                        # Run queries
                         original_query = original.Original(month, YEAR, year_start_date)
                         original_query.run(original_context, dataset_path, original_output.name)
 
@@ -71,16 +113,32 @@ if __name__ == '__main__':
                         query.run(query_context, dataset_path, query_output.name)
 
                         # Compare query outputs
-                        diff_result = subprocess.run(
-                            [
-                                'diff', '--color=always', '-u',
-                                original_output.name, query_output.name
-                            ],
-                            capture_output=True
-                        ).stdout.decode('utf-8')
+                        diff_result = diff_files(original_output.name, query_output.name)
+                        fp_errors   = check_diff_for_fp_errors(diff_result, MAX_RELATIVE_ERROR)
 
                         # Fail if outputs differ
                         if diff_result:
-                            print(f'Queries do not match for month {month_name}', file=sys.stderr)
-                            print(diff_result, file=sys.stderr)
-                            sys.exit(1)
+                            if fp_errors:
+                                print(
+                                    f'\033[35mAcceptable differences for {month_name}:\033[0m',
+                                    file=sys.stderr
+                                )
+                                print(diff_result, file=sys.stderr)
+                            else:
+                                print(
+                                    f'\033[31mUnacceptable differences for {month_name}:\033[0m',
+                                    file=sys.stderr
+                                )
+
+                                print(diff_result, file=sys.stderr)
+                                sys.exit(1)
+
+                        # Truncate temporary files
+                        original_output.truncate(0)
+                        original_output.seek(0)
+                        query_output.truncate(0)
+                        query_output.seek(0)
+
+                        # Reset contexts
+                        original_context.between_runs_cleanup()
+                        query_context.between_runs_cleanup()
