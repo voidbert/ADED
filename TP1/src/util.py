@@ -29,6 +29,7 @@ from query import Query
 # Returns all available query implementation classes
 def get_avaialable_queries() -> dict[str, type[Query]]:
     import original
+    import optimized
     import duck
 
     return {query.__name__: query for query in Query.__subclasses__()} # type: ignore
