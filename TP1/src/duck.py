@@ -82,7 +82,7 @@ class DuckDB(Query):
                         CASE
                             WHEN AllocTRES IS NULL OR AllocTRES = '' THEN
                                 TRY_CAST(NNodes AS BIGINT)
-                            WHEN AllocTRES ~ 'gres/gpu=\d+' THEN
+                            WHEN regexp_matches(AllocTRES, 'gres/gpu=\d+') THEN
                                 CAST(regexp_extract(AllocTRES, 'gres/gpu=(\d+)', 1) AS BIGINT)
                             ELSE
                                 TRY_CAST(NNodes AS BIGINT) * 4
@@ -96,11 +96,8 @@ class DuckDB(Query):
                 delim='|',
                 header=true,
                 filename=true,
-                ignore_errors=true,
                 types={{'NNodes': 'VARCHAR', 'ElapsedRaw': 'VARCHAR'}}
             )
-            WHERE ElapsedRaw IS NOT NULL AND ElapsedRaw != ''
-            AND NNodes IS NOT NULL AND NNodes != ''
         ''')
 
     def process_dataset(self, context: Context) -> None:
