@@ -54,7 +54,7 @@ class Context:
 
 # Abstraction for reusable spark session.
 class SparkContext(Context):
-    def __init__(self, processes: int, **kwargs: object) -> None:
+    def __init__(self, threads: int, **kwargs: object) -> None:
         if kwargs.get('events', ''):
             # Create directory for storing events
             assert isinstance(kwargs['events'], str)
@@ -66,15 +66,15 @@ class SparkContext(Context):
                 pass
 
             # Create Spark session with event logging
-            self.spark = SparkSession.builder.master(f'local[{processes}]')            \
+            self.spark = SparkSession.builder.master(f'local[{threads}]')              \
                                              .appName('deucalion-query')               \
                                              .config('spark.eventLog.enabled', 'true') \
                                              .config('spark.eventLog.dir', events_dir) \
                                              .getOrCreate()
         else:
             # Create Spark session without event logging
-            self.spark = SparkSession.builder.master(f'local[{processes}]') \
-                                             .appName('deucalion-query')    \
+            self.spark = SparkSession.builder.master(f'local[{threads}]') \
+                                             .appName('deucalion-query')  \
                                              .getOrCreate()
 
     def between_runs_cleanup(self) -> None:
@@ -88,10 +88,10 @@ class SparkContext(Context):
 
 # Abstraction for reusable DuckDB connection.
 class DuckDBContext(Context):
-    def __init__(self, processes: int, **kwargs: object) -> None:
+    def __init__(self, threads: int, **kwargs: object) -> None:
         # Initialize an in-memory database and use a set number of threads
         self.connection = duckdb.connect(':memory:')
-        self.connection.execute(f'SET THREADS TO {processes}')
+        self.connection.execute(f'SET THREADS TO {threads}')
 
     def between_runs_cleanup(self) -> None:
         # Delete all views

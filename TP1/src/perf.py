@@ -47,20 +47,20 @@ if __name__ == '__main__':
     parser.add_argument('query', choices=queries)
     parser.add_argument('dataset')
 
-    parser.add_argument('-e', '--events',  nargs='?')
-    parser.add_argument('-o', '--outfile', nargs='?')
-    parser.add_argument('-w', '--warmup',  nargs='?', type=int)
-    parser.add_argument('-r', '--runs',    nargs='?', type=int)
-    parser.add_argument('-n', '--nprocs',  nargs='?', type=__parse_thread_list)
+    parser.add_argument('-e', '--events',   nargs='?')
+    parser.add_argument('-o', '--outfile',  nargs='?')
+    parser.add_argument('-w', '--warmup',   nargs='?', type=int)
+    parser.add_argument('-r', '--runs',     nargs='?', type=int)
+    parser.add_argument('-n', '--nthreads', nargs='?', type=__parse_thread_list)
 
     args = parser.parse_args()
 
     # Use default arguments if arguments are not set
     query_class = queries[args.query]
-    output_file = args.outfile or 'perf.csv'
-    warmup_runs = args.warmup  or 0
-    runs        = args.runs    or 3
-    nprocs      = args.nprocs  or [util.get_spark_num_processes()]
+    output_file = args.outfile  or 'perf.csv'
+    warmup_runs = args.warmup   or 0
+    runs        = args.runs     or 3
+    nthreads    = args.nthreads or [util.get_context_threads()]
 
     # Run performance analysis
     hostname = socket.gethostname()
@@ -77,18 +77,18 @@ if __name__ == '__main__':
         ])
         csv_file.flush()
 
-        for nproc in nprocs:
+        for nthread in nthreads:
             # Create (and time) context creation
             context_init_start = time.monotonic()
-            with query_class.create_context(nproc, events=args.events) as context:
+            with query_class.create_context(nthread, events=args.events) as context:
                 context_init_end = time.monotonic()
 
                 for run in range(warmup_runs + runs):
                     # User feedback
                     if run >= warmup_runs:
-                        print(f'Running: {nproc} processes -- run {run + 1 - warmup_runs}')
+                        print(f'Running: {nthread} threads -- run {run + 1 - warmup_runs}')
                     else:
-                        print(f'Running: {nproc} processes -- warmup run {run + 1}')
+                        print(f'Running: {nthread} threads -- warmup run {run + 1}')
 
                     # Measure dataset loading and query execution times
                     t0 = time.monotonic()
@@ -106,7 +106,7 @@ if __name__ == '__main__':
                     if run >= warmup_runs:
                         csv_writer.writerow([
                             hostname,
-                            nproc,
+                            nthread,
                             run,
                             context_init_end - context_init_start,
                             t1 - t0,

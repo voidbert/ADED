@@ -49,9 +49,9 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Initialize contexts
-    spark_processes = util.get_spark_num_processes()
-    with original.Original.create_context(spark_processes) as original_context:
-        with query_class.create_context(spark_processes) as query_context:
+    context_threads = util.get_context_threads()
+    with original.Original.create_context(context_threads) as original_context:
+        with query_class.create_context(context_threads) as query_context:
 
             # Create temporary files for the outputs of the original query and the query being
             # tested

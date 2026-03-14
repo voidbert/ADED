@@ -30,8 +30,8 @@ from query import Query
 
 class DuckDB(Query):
     @staticmethod
-    def create_context(processes: int, **kwargs: object) -> Context:
-        return DuckDBContext(processes, **kwargs)
+    def create_context(threads: int, **kwargs: object) -> Context:
+        return DuckDBContext(threads, **kwargs)
 
     def load_dataset(self, context: Context, dataset_path: str) -> None:
         # List CSV files to load

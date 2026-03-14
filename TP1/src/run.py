@@ -60,7 +60,6 @@ if __name__ == '__main__':
     first_year_date = args.start   or datetime.date(year, 1, 1)
 
     # Initialize context and run query
-    spark_processes = util.get_spark_num_processes()
-    with query_class.create_context(spark_processes) as context:
+    with query_class.create_context(util.get_context_threads()) as context:
         query = query_class(month, year, first_year_date)
         query.run(context, args.dataset, outfile)

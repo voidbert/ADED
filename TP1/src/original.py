@@ -31,8 +31,8 @@ from query import Query
 
 class Original(Query):
     @staticmethod
-    def create_context(processes: int, **kwargs: object) -> Context:
-        return SparkContext(processes, **kwargs)
+    def create_context(threads: int, **kwargs: object) -> Context:
+        return SparkContext(threads, **kwargs)
 
     def load_dataset(self, context: Context, dataset_path: str) -> None:
         # Get Spark session from context

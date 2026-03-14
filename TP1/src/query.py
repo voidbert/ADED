@@ -158,7 +158,7 @@ class Query(abc.ABC):
     # Creates a context (e.g.: Spark session) that can be used for multiple query executions
     @staticmethod
     @abc.abstractmethod
-    def create_context(processes: int, **kwargs: object) -> Context:
+    def create_context(threads: int, **kwargs: object) -> Context:
         pass
 
     # Runs the query: loads a dataset, processes it, and writes the results to a LaTeX file
