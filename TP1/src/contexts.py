@@ -22,6 +22,7 @@
 # SOURCE FILE --------------------------------------------------------------------------------------
 
 import duckdb
+import psycopg2
 import gc
 import os
 from pyspark.sql import SparkSession
@@ -39,7 +40,7 @@ class Context:
         pass
 
     # Method for context management (with-statement support)
-    def __enter__(self) -> Context:
+    def __enter__(self) -> "Context":
         return self
 
     # Method for context management (with-statement support)
@@ -98,6 +99,25 @@ class DuckDBContext(Context):
         view_names = self.connection.execute('SELECT view_name FROM duckdb_views').fetchall()
         for view_name_tuple in view_names:
             self.connection.execute(f'DROP VIEW IF EXISTS {view_name_tuple[0]}')
+
+    def final_cleanup(self) -> None:
+        self.connection.close()
+
+class PostgreSQLContext(Context):
+    def __init__(self, threads: int, **kwargs: object) -> None:
+        # Connect to PostgreSQL database using provided parameters
+        self.connection = psycopg2.connect(
+            host="127.0.0.1",
+            port="5432",
+            database="statshpc",
+            user="postgres",
+            password="root"
+        )
+
+    def between_runs_cleanup(self) -> None:
+        with self.connection.cursor() as cur:
+            cur.execute('DELETE FROM jobs;')
+            self.connection.commit()
 
     def final_cleanup(self) -> None:
         self.connection.close()

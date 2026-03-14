@@ -30,6 +30,10 @@ from query import Query
 def get_avaialable_queries() -> dict[str, type[Query]]:
     import original
     import duck
+    import postgres
+    import cleanup
+    import groupbyiter 
+    import groupbyonepass
 
     return {query.__name__: query for query in Query.__subclasses__()} # type: ignore
 
