@@ -31,6 +31,7 @@ def get_avaialable_queries() -> dict[str, type[Query]]:
     import original
     import multipass
     import singlepass
+    import fastload
     import duck
 
     return {query.__name__: query for query in Query.__subclasses__()} # type: ignore
