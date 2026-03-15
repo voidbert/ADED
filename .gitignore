@@ -11,5 +11,7 @@
 # TP1 intermediate files
 TP1/.venv
 TP1/dataset
-TP1/**/*.tex
 TP1/**/*.csv
+TP1/**/*.tex
+!TP1/report/*.tex
+TP1/report/*.pdf
