@@ -55,10 +55,8 @@ def check_diff_for_fp_errors(diff_result: str, max_relative_error: float) -> boo
     query_differences    = dict(re.findall(r'\n[^+]*\+\\def\\(\w*){([^}]*)}', diff_result))
 
     # Check for additional or missing parameters
-    if set(original_differences) != set(query_differences):
+    if list(original_differences) != list(query_differences):
         return False
-
-    print(original_differences, query_differences) # TODO - remove
 
     # Check for floating-point differences
     for parameters, original_value in original_differences.items():
