@@ -27,6 +27,7 @@ import argparse
 import csv
 import datetime
 import socket
+import tempfile
 import time
 
 import util
@@ -71,9 +72,10 @@ if __name__ == '__main__':
             'HOSTNAME',
             'NPROC',
             'RUN',
-            'SPARK_INIT_TIME',
+            'CONTEXT_INIT_TIME',
             'DATASET_LOAD_TIME',
-            'DATASET_PROCESS_TIME'
+            'DATASET_PROCESS_TIME',
+            'TOTAL_TIME'
         ])
         csv_file.flush()
 
@@ -100,6 +102,9 @@ if __name__ == '__main__':
 
                     query.process_dataset(context)
 
+                    with tempfile.NamedTemporaryFile() as output_file:
+                        query.output_result(output_file.name)
+
                     t2 = time.monotonic()
 
                     # Write non-warmup run performance data to the CSV file
@@ -110,7 +115,8 @@ if __name__ == '__main__':
                             run,
                             context_init_end - context_init_start,
                             t1 - t0,
-                            t2 - t1
+                            t2 - t1,
+                            t2 - t0
                         ])
 
                         csv_file.flush()
