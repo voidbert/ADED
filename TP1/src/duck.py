@@ -78,15 +78,15 @@ class DuckDB(Query):
                     WHEN Partition LIKE '%a100%' THEN
                         CASE
                             WHEN AllocTRES IS NULL OR AllocTRES = '' THEN
-                                TRY_CAST(NNodes AS BIGINT)
+                                TRY_CAST(NNodes AS INT)
                             WHEN regexp_matches(AllocTRES, 'gres/gpu=\d+') THEN
-                                CAST(regexp_extract(AllocTRES, 'gres/gpu=(\d+)', 1) AS BIGINT)
+                                CAST(regexp_extract(AllocTRES, 'gres/gpu=(\d+)', 1) AS INT)
                             ELSE
-                                TRY_CAST(NNodes AS BIGINT) * 4
+                                TRY_CAST(NNodes AS INT) * 4
                         END
                     ELSE
-                        TRY_CAST(NNodes AS BIGINT)
-                END * TRY_CAST(ElapsedRaw AS BIGINT) AS totalJobSeconds
+                        TRY_CAST(NNodes AS INT)
+                END * TRY_CAST(ElapsedRaw AS INT) AS totalJobSeconds
 
             FROM read_csv(
                 {csv_files},
@@ -103,7 +103,8 @@ class DuckDB(Query):
 
         aggregated_results = connection.execute('''
             SELECT Period, cluster, Agency, COMPLETED, COUNT(*), SUM(totalJobSeconds)
-            FROM jobs GROUP BY 1, 2, 3, 4
+                FROM jobs
+                GROUP BY 1, 2, 3, 4
         ''').fetchall()
 
         # Use aggregated data to for computing query results
