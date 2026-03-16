@@ -23,7 +23,9 @@
 
 from pyspark.sql import DataFrame
 import pyspark.sql.functions as F
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType, TimestampType
+from pyspark.sql.types import (
+    StructType, StructField, StringType, IntegerType, LongType, TimestampType
+)
 import os
 import re
 
@@ -47,7 +49,7 @@ class FastLoad(Query):
             StructField('ElapsedRaw',    IntegerType(),   False),
             StructField('Account',       StringType(),    False),
             StructField('AllocCPUS',     IntegerType(),   False),
-            StructField('CPUTimeRAW',    IntegerType(),   False),
+            StructField('CPUTimeRAW',    LongType(),      False),
             StructField('NNodes',        IntegerType(),   False),
             StructField('AllocNodes',    StringType(),    False),
             StructField('NCPUS',         IntegerType(),   False),
