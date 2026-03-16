@@ -48,9 +48,6 @@ class DuckDB(Query):
         connection.execute(rf'''
             CREATE OR REPLACE VIEW jobs AS SELECT
                 regexp_replace(filename, '.*jobs_(.+)\.txt', '\1') AS Period,
-                TRY_CAST(NNodes     AS BIGINT)                     AS NNodes,
-                TRY_CAST(ElapsedRaw AS BIGINT)                     AS ElapsedRaw,
-                AllocTRES,
 
                 CASE
                     WHEN State = 'COMPLETED' THEN
@@ -95,8 +92,7 @@ class DuckDB(Query):
                 {csv_files},
                 delim='|',
                 header=true,
-                filename=true,
-                types={{'NNodes': 'VARCHAR', 'ElapsedRaw': 'VARCHAR'}}
+                filename=true
             )
         ''')
 
