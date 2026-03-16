@@ -24,7 +24,9 @@
 import duckdb
 import gc
 import os
+import psycopg2
 from pyspark.sql import SparkSession
+import socket
 from types import TracebackType
 
 # Abstraction for a reusable Spark session or database connection.
@@ -85,6 +87,38 @@ class SparkContext(Context):
 
     def final_cleanup(self) -> None:
         self.spark.stop()
+
+# Abstraction for reusable PostgreSQL connection.
+class PostgreSQLContext(Context):
+    def __init__(self, threads: int, **kwargs: object) -> None:
+        # Connect to a local database
+        self.connection = psycopg2.connect(
+            host='localhost',
+            port=5432,
+            database='postgres',
+            user='postgres'
+        )
+
+        self.cursor = self.connection.cursor()
+
+    def between_runs_cleanup(self) -> None:
+        # Delete all temporary tables
+        self.cursor.execute('DISCARD TEMP')
+
+    def final_cleanup(self) -> None:
+        self.cursor.close()
+        self.connection.close()
+
+    # Converts a file path to one that can be used in PostgreSQL.
+    #
+    # If PostgreSQL is running in a Docker container, it is assumed the local filesystem is mounted
+    # on /mnt.
+    def convert_file_path(self, path: str) -> str:
+        absolute_path = os.path.abspath(path)
+        if socket.gethostname().startswith('cna'): # ARM node (awful heuristic, but it's whatever)
+            return absolute_path
+        else:
+            return f'/mnt{absolute_path}'
 
 # Abstraction for reusable DuckDB connection.
 class DuckDBContext(Context):
