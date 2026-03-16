@@ -24,8 +24,8 @@
 # SOURCE FILE --------------------------------------------------------------------------------------
 
 import argparse
-import csv
 import datetime
+import json
 import socket
 import tempfile
 import time
@@ -58,67 +58,68 @@ if __name__ == '__main__':
 
     # Use default arguments if arguments are not set
     query_class = queries[args.query]
-    output_file = args.outfile  or 'perf.csv'
+    output_file = args.outfile  or 'perf.json'
     warmup_runs = args.warmup   or 0
     runs        = args.runs     or 3
     nthreads    = args.nthreads or [util.get_context_threads()]
 
-    # Run performance analysis
-    hostname = socket.gethostname()
+    # Run scalability analysis
+    output_data = {
+        'query':       args.query,
+        'hostname':    socket.gethostname(),
+        'scalability': {}
+    }
 
-    with open(output_file, 'w') as csv_file:
-        csv_writer = csv.writer(csv_file, lineterminator='\n')
-        csv_writer.writerow([
-            'HOSTNAME',
-            'NPROC',
-            'RUN',
-            'CONTEXT_INIT_TIME',
-            'DATASET_LOAD_TIME',
-            'DATASET_PROCESS_TIME',
-            'TOTAL_TIME'
-        ])
-        csv_file.flush()
+    for nthread in nthreads:
+        # Create (and time) context creation
+        context_init_start = time.monotonic()
+        with query_class.create_context(nthread, events=args.events) as context:
+            context_init_end  = time.monotonic()
+            scalability_entry = {
+                'threads':         nthread,
+                'contextInitTime': context_init_end - context_init_start,
+                'runs':            []
+            }
 
-        for nthread in nthreads:
-            # Create (and time) context creation
-            context_init_start = time.monotonic()
-            with query_class.create_context(nthread, events=args.events) as context:
-                context_init_end = time.monotonic()
+            # Run all runs for the current number of threads
+            for run in range(warmup_runs + runs):
+                # User feedback
+                if run >= warmup_runs:
+                    print(f'Running: {nthread} threads -- run {run + 1 - warmup_runs}')
+                else:
+                    print(f'Running: {nthread} threads -- warmup run {run + 1}')
 
-                for run in range(warmup_runs + runs):
-                    # User feedback
-                    if run >= warmup_runs:
-                        print(f'Running: {nthread} threads -- run {run + 1 - warmup_runs}')
-                    else:
-                        print(f'Running: {nthread} threads -- warmup run {run + 1}')
+                # Measure dataset loading and query execution times
+                t0 = time.monotonic()
 
-                    # Measure dataset loading and query execution times
-                    t0 = time.monotonic()
+                query = query_class(MONTH, YEAR, datetime.date(YEAR, 1, 1))
+                query.load_dataset(context, args.dataset)
 
-                    query = query_class(MONTH, YEAR, datetime.date(YEAR, 1, 1))
-                    query.load_dataset(context, args.dataset)
+                t1 = time.monotonic()
 
-                    t1 = time.monotonic()
+                query.process_dataset(context)
 
-                    query.process_dataset(context)
+                with tempfile.NamedTemporaryFile() as query_output_file:
+                    query.output_result(query_output_file.name)
 
-                    with tempfile.NamedTemporaryFile() as output_file:
-                        query.output_result(output_file.name)
+                t2 = time.monotonic()
 
-                    t2 = time.monotonic()
+                # Add non-warmup runs to output file
+                if run >= warmup_runs:
+                    scalability_entry['runs'].append({
+                        'datasetLoadTime':    t1 - t0,
+                        'datasetProcessTime': t2 - t1,
+                        'totalTime':          t2 - t0
+                    })
 
-                    # Write non-warmup run performance data to the CSV file
-                    if run >= warmup_runs:
-                        csv_writer.writerow([
-                            hostname,
-                            nthread,
-                            run,
-                            context_init_end - context_init_start,
-                            t1 - t0,
-                            t2 - t1,
-                            t2 - t0
-                        ])
+                # Cleanup context before next run 
+                context.between_runs_cleanup()
 
-                        csv_file.flush()
 
-                    context.between_runs_cleanup()
+        # Insert thread data into final file
+        output_data['scalability'][str(nthread)] = scalability_entry
+
+    # Output file data
+    with open(output_file, 'w') as json_file:
+        json.dump(output_data, json_file, indent=4)
+        json_file.write('\n')
