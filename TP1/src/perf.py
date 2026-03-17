@@ -27,6 +27,7 @@ import argparse
 import datetime
 import json
 import os
+import re
 import socket
 import tempfile
 import time
@@ -49,6 +50,21 @@ def __get_working_cpu_time() -> float:
     with open('/proc/uptime', 'r') as f:
         numbers = [float(x) for x in f.read().split()]
         return (numbers[0] * num_cpus - numbers[1]) / num_cpus
+
+# Parses the disk stats from /proc/[pid]/io
+def __get_disk_stats(pid: int | None) -> dict[str, int]:
+    disk_stats: dict[str, int] = {}
+
+    if pid:
+        with open(f'/proc/{pid}/io', 'r') as file:
+            for line in file:
+                match = re.match(r'(\w+):\s+(\d+)', line)
+                if not match:
+                    continue
+
+                disk_stats[match.group(1)] = int(match.group(2))
+
+    return disk_stats
 
 # Processes Spark monitoring metrics for the output file
 @typing.no_type_check
@@ -188,7 +204,9 @@ if __name__ == '__main__':
         context_init_start = time.monotonic()
         with query_class.create_context(nthread, events=args.events) as context:
             context_init_end  = time.monotonic()
-            scalability_entry = {
+
+            disk_monitoring_pid = context.get_disk_monitoring_process_pid()
+            scalability_entry   = {
                 'threads':         nthread,
                 'contextInitTime': context_init_end - context_init_start,
                 'runs':            []
@@ -204,22 +222,25 @@ if __name__ == '__main__':
                     print(f'Running: {nthread} threads -- warmup run {run + 1}')
 
                 # Measure dataset loading and query execution times
-                t0   = time.monotonic()
-                cpu0 = __get_working_cpu_time()
+                t0    = time.monotonic()
+                cpu0  = __get_working_cpu_time()
+                disk0 = __get_disk_stats(disk_monitoring_pid)
 
                 query = query_class(MONTH, YEAR, datetime.date(YEAR, 1, 1))
                 query.load_dataset(context, args.dataset)
 
-                t1   = time.monotonic()
-                cpu1 = __get_working_cpu_time()
+                t1    = time.monotonic()
+                cpu1  = __get_working_cpu_time()
+                disk1 = __get_disk_stats(disk_monitoring_pid)
 
                 query.process_dataset(context)
 
                 with tempfile.NamedTemporaryFile() as query_output_file:
                     query.output_result(query_output_file.name)
 
-                t2   = time.monotonic()
-                cpu2 = __get_working_cpu_time()
+                t2    = time.monotonic()
+                cpu2  = __get_working_cpu_time()
+                disk2 = __get_disk_stats(disk_monitoring_pid)
 
                 # Cleanup context before next run
                 context.between_runs_cleanup()
@@ -235,6 +256,23 @@ if __name__ == '__main__':
                         'datasetProcessCPUUsage': (cpu2 - cpu1) / (t2 - t1),
                         'totalCPUUsage':          (cpu2 - cpu0) / (t2 - t0)
                     }
+
+                    # Add disk monitoring metrics
+                    if disk_monitoring_pid:
+                        disk_tags = {
+                            'datasetLoad':    (disk1, disk0),
+                            'datasetProcess': (disk2, disk1),
+                            'total':          (disk2, disk0)
+                        }
+
+                        for tag, (disk1, disk0) in disk_tags.items():
+                            run_entry[f'{tag}LogicalReadBytes']    = disk1['rchar'] - disk0['rchar']
+                            run_entry[f'{tag}LogicalWrittenBytes'] = disk1['wchar'] - disk0['wchar']
+
+                            run_entry[f'{tag}PhysicalReadBytes']    = \
+                                disk1['read_bytes'] - disk0['read_bytes']
+                            run_entry[f'{tag}PhysicalWrittenBytes'] = \
+                                disk1['write_bytes'] - disk0['write_bytes']
 
                     # Add additional Spark information if applicable
                     if isinstance(context, SparkContext):

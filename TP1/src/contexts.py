@@ -25,6 +25,7 @@ import datetime
 import duckdb
 import gc
 import os
+import psutil
 import psycopg2
 from pyspark.sql import SparkSession
 import re
@@ -57,6 +58,10 @@ class Context:
         ) -> None:
 
         self.final_cleanup()
+
+    # Gets the PID of the process whose disk activity should be monitored.
+    def get_disk_monitoring_process_pid(self) -> int | None:
+        return None
 
 # Abstraction for reusable spark session.
 class SparkContext(Context):
@@ -115,6 +120,12 @@ class SparkContext(Context):
 
     def final_cleanup(self) -> None:
         self.spark.stop()
+
+    def get_disk_monitoring_process_pid(self) -> int | None:
+        # Return first Java process found in children
+        children      = psutil.Process().children()
+        spark_process = next(child for child in children if child.name() == 'java')
+        return spark_process.pid
 
     # Caculates the difference in time (in seconds) between Spark timestamps.
     @staticmethod
@@ -183,3 +194,6 @@ class DuckDBContext(Context):
 
     def final_cleanup(self) -> None:
         self.connection.close()
+
+    def get_disk_monitoring_process_pid(self) -> int | None:
+        return os.getpid()
