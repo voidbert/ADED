@@ -26,6 +26,7 @@
 import argparse
 import datetime
 import json
+import os
 import socket
 import tempfile
 import time
@@ -41,6 +42,13 @@ MONTH = 1
 # Parses a list of threads for a scalability analysis
 def __parse_thread_list(thread_list: str) -> list[int]:
     return [int(threads) for threads in thread_list.split(',')]
+
+# Gets the number of seconds the CPU has been active since boot, normalized to the number of cores.
+def __get_working_cpu_time() -> float:
+    num_cpus = os.sysconf(os.sysconf_names['SC_NPROCESSORS_ONLN'])
+    with open('/proc/uptime', 'r') as f:
+        numbers = [float(x) for x in f.read().split()]
+        return (numbers[0] * num_cpus - numbers[1]) / num_cpus
 
 # Processes Spark monitoring metrics for the output file
 @typing.no_type_check
@@ -196,19 +204,22 @@ if __name__ == '__main__':
                     print(f'Running: {nthread} threads -- warmup run {run + 1}')
 
                 # Measure dataset loading and query execution times
-                t0 = time.monotonic()
+                t0   = time.monotonic()
+                cpu0 = __get_working_cpu_time()
 
                 query = query_class(MONTH, YEAR, datetime.date(YEAR, 1, 1))
                 query.load_dataset(context, args.dataset)
 
-                t1 = time.monotonic()
+                t1   = time.monotonic()
+                cpu1 = __get_working_cpu_time()
 
                 query.process_dataset(context)
 
                 with tempfile.NamedTemporaryFile() as query_output_file:
                     query.output_result(query_output_file.name)
 
-                t2 = time.monotonic()
+                t2   = time.monotonic()
+                cpu2 = __get_working_cpu_time()
 
                 # Cleanup context before next run
                 context.between_runs_cleanup()
@@ -216,10 +227,13 @@ if __name__ == '__main__':
                 # Add non-warmup runs to output file
                 if run >= warmup_runs:
                     run_entry = {
-                        'run':                run_number,
-                        'datasetLoadTime':    t1 - t0,
-                        'datasetProcessTime': t2 - t1,
-                        'totalTime':          t2 - t0
+                        'run':                    run_number,
+                        'datasetLoadTime':        t1 - t0,
+                        'datasetProcessTime':     t2 - t1,
+                        'totalTime':              t2 - t0,
+                        'datasetLoadCPUUsage':    (cpu1 - cpu0) / (t1 - t0),
+                        'datasetProcessCPUUsage': (cpu2 - cpu1) / (t2 - t1),
+                        'totalCPUUsage':          (cpu2 - cpu0) / (t2 - t0)
                     }
 
                     # Add additional Spark information if applicable
