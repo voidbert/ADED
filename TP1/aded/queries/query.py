@@ -27,7 +27,7 @@ import calendar
 from datetime import date, datetime
 from dateutil.relativedelta import relativedelta
 
-from contexts import Context
+from aded.contexts import Context
 
 # Deucalion report query -- abstract base class.
 #
@@ -58,7 +58,8 @@ class Query(abc.ABC):
         self.output_parameters = {
             # Reporting period
             'reportPeriod':          self.__format_date_range(first_month_date, last_month_date),
-            'reportPeriodTrimester': self.__format_date_range(first_trimester_date, last_month_date),
+            'reportPeriodTrimester':
+                self.__format_date_range(first_trimester_date, last_month_date),
             'reportPeriodYear':      self.__format_date_range(first_year_date, last_month_date),
             'reportMonth':           list(calendar.month_name)[month],
             'reportYear':            year,

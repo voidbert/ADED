@@ -8,9 +8,16 @@
 # mypy cache
 **/.mypy_cache/
 
-# TP1 intermediate files
+# TP1 setup
 TP1/.venv
 TP1/dataset
+
+# TP1 Python distribution files
+TP1/*.egg-info/
+TP1/build/
+TP1/dist/
+
+# TP1-generated files
 TP1/**/*.json
 TP1/**/*.tex
 !TP1/report/*.tex

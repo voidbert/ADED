@@ -27,7 +27,7 @@ import argparse
 import calendar
 import datetime
 
-import util
+from aded import util
 
 # Parses a YY-MM-DD date from the command-line arguments
 def __parse_cmd_date(date_str: str) -> datetime.date:

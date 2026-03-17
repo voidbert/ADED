@@ -1,6 +1,7 @@
 # ABOUT --------------------------------------------------------------------------------------------
 #
-# Query implementation in Spark that performs a single pass and collect over the dataset.
+# Query implementation in Spark that performs a pass over the dataset for each tag (year, trimester,
+# month).
 #
 # LICENSE ------------------------------------------------------------------------------------------
 #
@@ -26,11 +27,45 @@ import pyspark.sql.functions as F
 import os
 import re
 
-from contexts import Context, SparkContext
-from multipass import MultiPass
-from query import Query
+from aded.contexts import Context, SparkContext
+from aded.queries.original import Original
 
-class SinglePass(MultiPass):
+class MultiPass(Original):
+    def load_dataset(self, context: Context, dataset_path: str) -> None:
+        # Get Spark session from context
+        assert isinstance(context, SparkContext)
+        spark = context.spark
+
+        # Iterate over all entries in the dataset directory
+        year_data: DataFrame | None = None
+        with os.scandir(dataset_path) as entries:
+            for entry in entries:
+
+                # Load only files with month job data
+                match = re.match(r'jobs_([^\.]+)\..*', entry.name)
+                if match and entry.is_file():
+                    month = match.group(1)
+
+                    # Load CSV file and add extra columns for job status and month
+                    month_data = spark.read.csv(
+                        os.path.join(dataset_path, entry.name),
+                        sep='|', inferSchema=True, header=True
+                    ).withColumn(
+                        'COMPLETED',
+                        F.when(F.col('State') == 'COMPLETED', 'COMPLETED').otherwise('FAILED')
+                    ).withColumn(
+                        'Period', F.lit(month)
+                    )
+
+                    # Concatenate CSV files from all months
+                    if year_data is None:
+                        year_data = month_data
+                    else:
+                        year_data = year_data.union(month_data)
+
+        assert isinstance(year_data, DataFrame)
+        self.data = year_data
+
     def process_dataset(self, _: Context) -> None:
         # Add column for job cluster (arm, amd, or gpu) based on partition name
         # Use lower case to simplify filling in output parameters
@@ -91,16 +126,17 @@ class SinglePass(MultiPass):
         # Add column for total job seconds
         self.data = self.data.withColumn('totalJobSeconds', F.col('ElapsedRaw') * F.col('VNodes'))
 
-        # Group job count and hours by month, partition, account, and state
-        aggregated_results = self.data.groupby('Period', 'cluster', 'Agency', 'COMPLETED') \
-                                      .agg(
-                                          F.count('*').alias('job_count'),
-                                          F.sum('totalJobSeconds').alias('total_secs')
-                                      ).collect()
-
         # Use aggregated data to for computing query results
         for tag, months in self.tag_months.items():
             hours: dict[str, int] = {'arm': 0, 'amd': 0, 'gpu': 0}
+
+            # Group job count and hours by month, partition, account, and state
+            aggregated_results = self.data.filter(F.col('Period').isin(months))                \
+                                          .groupby('Period', 'cluster', 'Agency', 'COMPLETED') \
+                                          .agg(
+                                              F.count('*').alias('job_count'),
+                                              F.sum('totalJobSeconds').alias('total_secs')
+                                          ).collect()
 
             for row in aggregated_results:
                 if row.Period in months:

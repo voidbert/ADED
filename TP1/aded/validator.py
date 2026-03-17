@@ -25,21 +25,13 @@
 
 import calendar
 import datetime
-from pyspark.sql import SparkSession
 import re
 import subprocess
 import sys
 import tempfile
 
-import original
-import util
-
-# Hardcoded year for report results. It only influences output parameters related to time ranges,
-# so it need not be changed for using other years' datasets.
-YEAR = 2025
-
-# Allowed relative floating-point error (0.1 %)
-MAX_RELATIVE_ERROR = 0.001
+from aded import config, util
+from aded.queries import Original
 
 # Runs the diff command on two files
 def diff_files(original_path: str, modified_path: str) -> str:
@@ -49,7 +41,7 @@ def diff_files(original_path: str, modified_path: str) -> str:
     ).stdout.decode('utf-8')
 
 # Checks if query differences are attributable to differences in floating-point arithmetic
-def check_diff_for_fp_errors(diff_result: str, max_relative_error: float) -> bool:
+def check_diff_for_fp_errors(diff_result: str) -> bool:
     # Parse differences between lines
     original_differences = dict(re.findall(r'\n[^\-]*-\\def\\(\w*){([^}]*)}', diff_result))
     query_differences    = dict(re.findall(r'\n[^+]*\+\\def\\(\w*){([^}]*)}', diff_result))
@@ -66,7 +58,7 @@ def check_diff_for_fp_errors(diff_result: str, max_relative_error: float) -> boo
             query_value_fp    = float(query_differences[parameters])
             error             = abs(original_value_fp - query_value_fp) / original_value_fp
 
-            if error > max_relative_error:
+            if error > config.MAX_RELATIVE_ERROR:
                 return False
 
         except ValueError, ZeroDivisionError:
@@ -89,14 +81,14 @@ if __name__ == '__main__':
 
     # Initialize contexts
     context_threads = util.get_context_threads()
-    with original.Original.create_context(context_threads) as original_context:
+    with Original.create_context(context_threads) as original_context:
         with query_class.create_context(context_threads) as query_context:
 
             # Create temporary files for the outputs of the original query and the query being
             # tested
             with tempfile.NamedTemporaryFile() as original_output:
                 with tempfile.NamedTemporaryFile() as query_output:
-                    year_start_date = datetime.date(YEAR, 1, 1)
+                    year_start_date = datetime.date(config.YEAR, 1, 1)
 
                     # Test results for each month
                     for month in range(1, 13):
@@ -104,15 +96,15 @@ if __name__ == '__main__':
                         print(f'Testing {month_name}')
 
                         # Run queries
-                        original_query = original.Original(month, YEAR, year_start_date)
+                        original_query = Original(month, config.YEAR, year_start_date)
                         original_query.run(original_context, dataset_path, original_output.name)
 
-                        query = query_class(month, YEAR, year_start_date)
+                        query = query_class(month, config.YEAR, year_start_date)
                         query.run(query_context, dataset_path, query_output.name)
 
                         # Compare query outputs
                         diff_result = diff_files(original_output.name, query_output.name)
-                        fp_errors   = check_diff_for_fp_errors(diff_result, MAX_RELATIVE_ERROR)
+                        fp_errors   = check_diff_for_fp_errors(diff_result)
 
                         # Fail if outputs differ
                         if diff_result:

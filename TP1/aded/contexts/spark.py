@@ -1,6 +1,6 @@
 # ABOUT --------------------------------------------------------------------------------------------
 #
-# Spark and database reusable context abstractions.
+# Abstraction for reusable spark session.
 #
 # LICENSE ------------------------------------------------------------------------------------------
 #
@@ -21,47 +21,16 @@
 #
 # SOURCE FILE --------------------------------------------------------------------------------------
 
-import datetime
-import duckdb
+from datetime import datetime
 import gc
 import os
 import psutil
-import psycopg2
 from pyspark.sql import SparkSession
 import re
 import requests
-import socket
-from types import TracebackType
 from typing import Any
 
-# Abstraction for a reusable Spark session or database connection.
-class Context:
-    # Method called between performance measurement runs that share the same context.
-    # For instance, it is necessary to clean a database between runs.
-    def between_runs_cleanup(self) -> None:
-        pass
-
-    # Method called after all query runs.
-    def final_cleanup(self) -> None:
-        pass
-
-    # Method for context management (with-statement support)
-    def __enter__(self) -> Context:
-        return self
-
-    # Method for context management (with-statement support)
-    def __exit__(
-            self,
-            exception_type: type[BaseException] | None,
-            exception_value: BaseException | None,
-            traceback: TracebackType
-        ) -> None:
-
-        self.final_cleanup()
-
-    # Gets the PID of the process whose disk activity should be monitored.
-    def get_disk_monitoring_process_pid(self) -> int | None:
-        return None
+from aded.contexts.context import Context
 
 # Abstraction for reusable spark session.
 class SparkContext(Context):
@@ -135,8 +104,8 @@ class SparkContext(Context):
         end   = re.sub('[A-Z]+$', '+00:00', end)
 
         # Parse dates and return difference
-        start_date = datetime.datetime.fromisoformat(start)
-        end_date   = datetime.datetime.fromisoformat(end)
+        start_date = datetime.fromisoformat(start)
+        end_date   = datetime.fromisoformat(end)
         return (end_date - start_date).total_seconds()
 
     # Performs a /api/v1/[path] GET request to Spark's monitoring API
@@ -146,54 +115,3 @@ class SparkContext(Context):
     # Performs a /api/v1/applications/[app-id]/[path] GET request to Spark's monitoring API
     def __application_request(self, path: str) -> Any:
         return self.__request(f'/applications/{self.application_id}{path}')
-
-# Abstraction for reusable PostgreSQL connection.
-class PostgreSQLContext(Context):
-    def __init__(self, threads: int, **kwargs: object) -> None:
-        # Connect to a local database
-        self.connection = psycopg2.connect(
-            host='localhost',
-            port=5432,
-            database='postgres',
-            user='postgres'
-        )
-
-        self.cursor = self.connection.cursor()
-
-    def between_runs_cleanup(self) -> None:
-        # Delete all temporary tables
-        self.cursor.execute('DISCARD TEMP')
-
-    def final_cleanup(self) -> None:
-        self.cursor.close()
-        self.connection.close()
-
-    # Converts a file path to one that can be used in PostgreSQL.
-    #
-    # If PostgreSQL is running in a Docker container, it is assumed the local filesystem is mounted
-    # on /mnt.
-    def convert_file_path(self, path: str) -> str:
-        absolute_path = os.path.abspath(path)
-        if socket.gethostname().startswith('cna'): # ARM node (awful heuristic, but it's whatever)
-            return absolute_path
-        else:
-            return f'/mnt{absolute_path}'
-
-# Abstraction for reusable DuckDB connection.
-class DuckDBContext(Context):
-    def __init__(self, threads: int, **kwargs: object) -> None:
-        # Initialize an in-memory database and use a set number of threads
-        self.connection = duckdb.connect(':memory:')
-        self.connection.execute(f'SET THREADS TO {threads}')
-
-    def between_runs_cleanup(self) -> None:
-        # Delete all views
-        view_names = self.connection.execute('SELECT view_name FROM duckdb_views').fetchall()
-        for view_name_tuple in view_names:
-            self.connection.execute(f'DROP VIEW IF EXISTS {view_name_tuple[0]}')
-
-    def final_cleanup(self) -> None:
-        self.connection.close()
-
-    def get_disk_monitoring_process_pid(self) -> int | None:
-        return os.getpid()

@@ -21,17 +21,13 @@
 #
 # SOURCE FILE --------------------------------------------------------------------------------------
 
-from pyspark.sql import DataFrame
 import pyspark.sql.functions as F
 from pyspark.sql.types import (
     StructType, StructField, StringType, IntegerType, LongType, TimestampType
 )
-import os
-import re
 
-from contexts import Context, SparkContext
-from singlepass import SinglePass
-from query import Query
+from aded.contexts import Context, SparkContext
+from aded.queries.singlepass import SinglePass
 
 class FastLoad(SinglePass):
     def load_dataset(self, context: Context, dataset_path: str) -> None:

@@ -22,11 +22,10 @@
 #
 # SOURCE FILE --------------------------------------------------------------------------------------
 
-import duckdb
 import os
 
-from contexts import Context, DuckDBContext
-from query import Query
+from aded.contexts import Context, DuckDBContext
+from aded.queries.query import Query
 
 class DuckDB(Query):
     @staticmethod

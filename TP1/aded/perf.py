@@ -32,12 +32,8 @@ import tempfile
 import time
 import typing
 
-from contexts import SparkContext
-import util
-
-# Hardcoded year and month for report results.
-YEAR  = 2025
-MONTH = 1
+from aded import config, util
+from aded.contexts import SparkContext
 
 # Parses a list of threads for a scalability analysis
 def __parse_thread_list(thread_list: str) -> list[int]:
@@ -225,7 +221,7 @@ if __name__ == '__main__':
                 cpu0  = __get_working_cpu_time()
                 disk0 = __get_disk_stats(disk_monitoring_pid)
 
-                query = query_class(MONTH, YEAR, datetime.date(YEAR, 1, 1))
+                query = query_class(config.MONTH, config.YEAR, datetime.date(config.YEAR, 1, 1))
                 query.load_dataset(context, args.dataset)
 
                 t1    = time.monotonic()

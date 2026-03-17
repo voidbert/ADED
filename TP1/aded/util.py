@@ -24,24 +24,19 @@
 import os
 import sys
 
-from query import Query
+from aded.queries import Query
 
 # Returns all available query implementation classes
 def get_avaialable_queries() -> dict[str, type[Query]]:
-    import original
-    import multipass
-    import singlepass
-    import fastload
-    import postgresql
-    import duck
+    from .queries import Original, MultiPass, SinglePass, FastLoad, PostgreSQL, DuckDB
 
     return {
-        'Original':   original.Original,
-        'MultiPass':  multipass.MultiPass,
-        'SinglePass': singlepass.SinglePass,
-        'FastLoad':   fastload.FastLoad,
-        'PostgreSQL': postgresql.PostgreSQL,
-        'DuckDB':     duck.DuckDB
+        'Original':   Original,
+        'MultiPass':  MultiPass,
+        'SinglePass': SinglePass,
+        'FastLoad':   FastLoad,
+        'PostgreSQL': PostgreSQL,
+        'DuckDB':     DuckDB
     }
 
 # Returns how many CPU cores are online

@@ -26,8 +26,8 @@ import pyspark.sql.functions as F
 import os
 import re
 
-from contexts import Context, SparkContext
-from query import Query
+from aded.contexts import Context, SparkContext
+from aded.queries.query import Query
 
 class Original(Query):
     @staticmethod

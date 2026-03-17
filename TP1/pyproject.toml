@@ -1,0 +1,78 @@
+# ABOUT --------------------------------------------------------------------------------------------
+#
+# Python project configuration.
+#
+# LICENSE ------------------------------------------------------------------------------------------
+#
+# Copyright (C) 2026 Humberto Gomes, José Lopes, José Soares
+#
+# This file is part of Deucalion Job Query.
+#
+# Deucalion Job Query is free software: you can redistribute it and/or modify it under the terms of
+# the GNU General Public License as published by the Free Software Foundation, either version 3 of
+# the License, or (at your option) any later version.
+#
+# Deucalion Job Query is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with Deucalion Job Query.
+# If not, see <https://www.gnu.org/licenses/>.
+#
+# SOURCE FILE --------------------------------------------------------------------------------------
+
+[build-system]
+    requires      = [ "setuptools", "wheel" ]
+    build-backend = "setuptools.build_meta"
+
+[project]
+    name        = "aded"
+    description = "UMinho's 2025/26 High Performance Data Analysis class assignment"
+    version     = "0.0.1"
+
+    authors = [
+        { name = "Humberto Gomes", email = "pg59806@alunos.uminho.pt" },
+        { name = "José Lopes",     email = "pg59807@alunos.uminho.pt" },
+        { name = "José Soares",    email = "pg60277@alunos.uminho.pt" },
+    ]
+
+    readme  = "README.md"
+    license = { file = "../LICENSE" }
+
+    requires-python = ">=3.12"
+
+    keywords = [ "spark", "query", "deucalion" ]
+    classifiers = [
+        "Development Status :: 2 - Pre-Alpha",
+        "Environment :: Console",
+        "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+        "Natural Language :: English",
+        "Operating System :: POSIX :: Linux",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: PL/SQL",
+        "Topic :: Education",
+        "Topic :: Database",
+        "Topic :: Scientific/Engineering",
+        "Topic :: Scientific/Engineering :: Information Analysis"
+    ]
+
+    dependencies = [
+        "pyspark==4.1.1",
+        "requests==2.32.5",
+        "python-dateutil==2.9.0.post0",
+        "psycopg2-binary==2.9.11",
+        "duckdb==1.5.0",
+        "psutil==7.2.2"
+    ]
+
+[project.urls]
+    Homepage      = "https://github.com/voidbert/ADED"
+    Repository    = "https://github.com/voidbert/ADED"
+    "Bug Tracker" = "https://github.com/voidbert/ADED/issues"
+
+[tool.setuptools]
+packages = ['aded']
+
+[tool.mypy]
+    strict = true
