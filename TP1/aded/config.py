@@ -40,4 +40,4 @@ MAX_RELATIVE_ERROR = 0.001
 POSTGRES_PATH_PREFIX = '' if socket.gethostname().startswith('cna') else '/mnt'
 
 # Network interface to monitor. By default, only Deucalion's /dev/ib0 is monitored.
-NETWORK_INTERFACE = None if socket.gethostname().startswith('cna') else 'ib0'
+NETWORK_INTERFACE = 'ib0' if socket.gethostname().startswith('cna') else None

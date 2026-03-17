@@ -40,8 +40,8 @@ def __parse_thread_list(thread_list: str) -> list[int]:
 
 # Processes Spark monitoring metrics for the output file
 @typing.no_type_check
-def __process_spark_metrics(context: SparkContext) -> typing.Any:
-    output_json = {
+def __format_spark_metrics(context: SparkContext) -> typing.Any:
+    spark_metrics = {
         'jobs':                [],
         'numJobs':             len(context.new_jobs),
         'numStages':           0,
@@ -128,18 +128,62 @@ def __process_spark_metrics(context: SparkContext) -> typing.Any:
             transformed_job['stages'].append(transformed_stage)
 
         # Update global query statistics
-        output_json['numStages']           += transformed_job['numStages']
-        output_json['numNonSkippedStages'] += transformed_job['numNonSkippedStages']
-        output_json['numTasks']            += transformed_job['numTasks']
-        output_json['numNonSkippedTasks']  += transformed_job['numNonSkippedTasks']
-        output_json['shuffleWriteBytes']   += transformed_job['shuffleWriteBytes']
-        output_json['shuffleWriteRecords'] += transformed_job['shuffleWriteRecords']
-        output_json['shuffleReadBytes']    += transformed_job['shuffleReadBytes']
-        output_json['shuffleReadRecords']  += transformed_job['shuffleReadRecords']
+        spark_metrics['numStages']           += transformed_job['numStages']
+        spark_metrics['numNonSkippedStages'] += transformed_job['numNonSkippedStages']
+        spark_metrics['numTasks']            += transformed_job['numTasks']
+        spark_metrics['numNonSkippedTasks']  += transformed_job['numNonSkippedTasks']
+        spark_metrics['shuffleWriteBytes']   += transformed_job['shuffleWriteBytes']
+        spark_metrics['shuffleWriteRecords'] += transformed_job['shuffleWriteRecords']
+        spark_metrics['shuffleReadBytes']    += transformed_job['shuffleReadBytes']
+        spark_metrics['shuffleReadRecords']  += transformed_job['shuffleReadRecords']
 
-        output_json['jobs'].append(transformed_job)
+        spark_metrics['jobs'].append(transformed_job)
 
-    return output_json
+    return spark_metrics
+
+# Formats disk metrics for the output file
+def __format_disk_metrics(
+    disk0: hwmon.DiskStatistics,
+    disk1: hwmon.DiskStatistics,
+    disk2: hwmon.DiskStatistics) -> dict[str, int]:
+
+    tags = {
+        'datasetLoad':    (disk1, disk0),
+        'datasetProcess': (disk2, disk1),
+        'total':          (disk2, disk0)
+    }
+
+    disk_metrics: dict[str, int] = {}
+    for tag, (disk_new, disk_old) in tags.items():
+        disk                                       = disk_new - disk_old
+        disk_metrics[f'{tag}LogicalReadBytes']     = disk.logical_read_bytes
+        disk_metrics[f'{tag}LogicalWrittenBytes']  = disk.logical_written_bytes
+        disk_metrics[f'{tag}PhysicalReadBytes']    = disk.physical_read_bytes
+        disk_metrics[f'{tag}PhysicalWrittenBytes'] = disk.physical_written_bytes
+
+    return disk_metrics
+
+# Formats network interface metrics for the output file
+def __format_net_metrics(
+    net0: hwmon.NetStatistics,
+    net1: hwmon.NetStatistics,
+    net2: hwmon.NetStatistics) -> dict[str, int]:
+
+    tags = {
+        'datasetLoad':    (net1, net0),
+        'datasetProcess': (net2, net1),
+        'total':          (net2, net0)
+    }
+
+    net_metrics: dict[str, int] = {}
+    for tag, (net_new, net_old) in tags.items():
+        net                                     = net_new - net_old
+        net_metrics[f'{tag}ReceivedBytes']      = net.rx_bytes
+        net_metrics[f'{tag}ReceivedPackets']    = net.rx_packets
+        net_metrics[f'{tag}TransmittedBytes']   = net.tx_bytes
+        net_metrics[f'{tag}TransmittedPackets'] = net.tx_packets
+
+    return net_metrics
 
 if __name__ == '__main__':
     # Parse command-line arguments
@@ -227,57 +271,35 @@ if __name__ == '__main__':
                         'datasetLoadTime':        t1 - t0,
                         'datasetProcessTime':     t2 - t1,
                         'totalTime':              t2 - t0,
-                        'datasetLoadCPUUsage':    (cpu1 - cpu0) / (t1 - t0),
-                        'datasetProcessCPUUsage': (cpu2 - cpu1) / (t2 - t1),
-                        'totalCPUUsage':          (cpu2 - cpu0) / (t2 - t0)
+                        'cpuMetrics': {
+                            'datasetLoadCPUUsage':    (cpu1 - cpu0) / (t1 - t0),
+                            'datasetProcessCPUUsage': (cpu2 - cpu1) / (t2 - t1),
+                            'totalCPUUsage':          (cpu2 - cpu0) / (t2 - t0)
+                        }
                     }
+
+                    # Add additional Spark information
+                    if isinstance(context, SparkContext):
+                        run_entry['sparkMetrics'] = __format_spark_metrics(context)
 
                     # Add disk monitoring metrics
                     if disk_monitoring_pid:
                         assert disk0 is not None
                         assert disk1 is not None
                         assert disk2 is not None
-
-                        disk_tags = {
-                            'datasetLoad':    (disk1, disk0),
-                            'datasetProcess': (disk2, disk1),
-                            'total':          (disk2, disk0)
-                        }
-
-                        for tag, (disk1, disk0) in disk_tags.items():
-                            disk                                    = disk1 - disk0
-                            run_entry[f'{tag}LogicalReadBytes']     = disk.logical_read_bytes
-                            run_entry[f'{tag}LogicalWrittenBytes']  = disk.logical_written_bytes
-                            run_entry[f'{tag}PhysicalReadBytes']    = disk.physical_read_bytes
-                            run_entry[f'{tag}PhysicalWrittenBytes'] = disk.physical_written_bytes
+                        run_entry['diskMetrics'] = __format_disk_metrics(disk0, disk1, disk2)
 
                     # Add network monitoring metrics
                     if config.NETWORK_INTERFACE:
                         assert net0 is not None
                         assert net1 is not None
                         assert net2 is not None
+                        run_entry['netMetrics'] = __format_net_metrics(net0, net1, net2)
 
-                        net_tags = {
-                            'datasetLoad':    (net1, net0),
-                            'datasetProcess': (net2, net1),
-                            'total':          (net2, net0)
-                        }
-
-                        for tag, (net1, net0) in net_tags.items():
-                            net                                   = net1 - net0
-                            run_entry[f'{tag}ReceivedBytes']      = net.rx_bytes
-                            run_entry[f'{tag}ReceivedPackets']    = net.rx_packets
-                            run_entry[f'{tag}TransmittedBytes']   = net.tx_bytes
-                            run_entry[f'{tag}TransmittedPackets'] = net.tx_packets
-
-
-                    # Add additional Spark information if applicable
-                    if isinstance(context, SparkContext):
-                        run_entry['sparkMetrics'] = __process_spark_metrics(context)
-
+                    # Add runt to list of runs
                     scalability_entry['runs'].append(run_entry)
 
-        # Insert thread data into final file
+        # Add thread data to final file
         output_data['scalability'][str(nthread)] = scalability_entry
 
     # Output file data
