@@ -26,7 +26,6 @@
 import argparse
 import datetime
 import json
-import os
 import re
 import socket
 import tempfile
@@ -46,7 +45,7 @@ def __parse_thread_list(thread_list: str) -> list[int]:
 
 # Gets the number of seconds the CPU has been active since boot, normalized to the number of cores.
 def __get_working_cpu_time() -> float:
-    num_cpus = os.sysconf(os.sysconf_names['SC_NPROCESSORS_ONLN'])
+    num_cpus = util.get_online_cpus()
     with open('/proc/uptime', 'r') as f:
         numbers = [float(x) for x in f.read().split()]
         return (numbers[0] * num_cpus - numbers[1]) / num_cpus

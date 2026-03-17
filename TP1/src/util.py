@@ -44,12 +44,22 @@ def get_avaialable_queries() -> dict[str, type[Query]]:
         'DuckDB':     duck.DuckDB
     }
 
+# Returns how many CPU cores are online
+def get_online_cpus() -> int:
+    ncpus = os.sysconf(os.sysconf_names['SC_NPROCESSORS_ONLN'])
+    assert isinstance(ncpus, int)
+    return ncpus
+
 # Returns how many threads should be used by the context (Spark, database, ...)
 def get_context_threads() -> int:
-    threads_str = os.environ.get('CONTEXT_NTHREADS', '1')
+    ncpus       = get_online_cpus()
+    threads_str = os.environ.get('CONTEXT_NTHREADS', str(ncpus))
 
     try:
         return int(threads_str)
     except ValueError:
-        print(f'CONTEXT_NTHREADS is an invalid number of threads: {threads_str}. Defaulting to 1.')
+        print(
+            f'CONTEXT_NTHREADS is an invalid number of threads: {threads_str}.',
+            f'Defaulting to {ncpus}.'
+        )
         return 1
