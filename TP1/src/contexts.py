@@ -21,13 +21,17 @@
 #
 # SOURCE FILE --------------------------------------------------------------------------------------
 
+import datetime
 import duckdb
 import gc
 import os
 import psycopg2
 from pyspark.sql import SparkSession
+import re
+import requests
 import socket
 from types import TracebackType
+from typing import Any
 
 # Abstraction for a reusable Spark session or database connection.
 class Context:
@@ -57,7 +61,14 @@ class Context:
 # Abstraction for reusable spark session.
 class SparkContext(Context):
     def __init__(self, threads: int, **kwargs: object) -> None:
-        if kwargs.get('events', ''):
+        # Necessary state for analysis of Spark performance metrics
+        self.event_logging                     = bool(kwargs.get('events', ''))
+        self.next_requested_job                = 0    # First new job id since last cleanup
+        self.next_requested_stage              = 0    # First new stage id since last cleanup
+        self.new_jobs:   dict[str, Any] | None = None # New jobs since last cleanup
+        self.new_stages: dict[str, Any] | None = None # New stages since last cleanup
+
+        if self.event_logging:
             # Create directory for storing events
             assert isinstance(kwargs['events'], str)
             events_dir = os.path.abspath(kwargs['events'])
@@ -79,14 +90,51 @@ class SparkContext(Context):
                                              .appName('deucalion-query')  \
                                              .getOrCreate()
 
+        if self.event_logging:
+            self.application_id = self.__request('/applications')[0]['id']
+        else:
+            self.application_id = ''
+
     def between_runs_cleanup(self) -> None:
         # Trigger Python's and Java's garbage collection to delete old data frames
         self.spark.catalog.clearCache()
         gc.collect()
         self.spark.sparkContext._jvm.System.gc() # type: ignore
 
+        # Request new jobs and stages that were not present in the last query's results
+        if self.event_logging:
+            all_jobs                = self.__application_request(f'/jobs')
+            new_jobs_list           = all_jobs[:len(all_jobs) - self.next_requested_job]
+            self.new_jobs           = {job['jobId']: job for job in new_jobs_list[::-1]}
+            self.next_requested_job = len(all_jobs)
+
+            all_stages                = self.__application_request(f'/stages?details=true')
+            new_stages_list           = all_stages[:len(all_stages) - self.next_requested_stage]
+            self.new_stages           = {stage['stageId']: stage for stage in new_stages_list[::-1]}
+            self.next_requested_stage = len(all_stages)
+
     def final_cleanup(self) -> None:
         self.spark.stop()
+
+    # Caculates the difference in time (in seconds) between Spark timestamps.
+    @staticmethod
+    def time_delta(start: str, end: str) -> float:
+        # Replace timezone for ISO 8601 parsing
+        start = re.sub('[A-Z]+$', '+00:00', start)
+        end   = re.sub('[A-Z]+$', '+00:00', end)
+
+        # Parse dates and return difference
+        start_date = datetime.datetime.fromisoformat(start)
+        end_date   = datetime.datetime.fromisoformat(end)
+        return (end_date - start_date).total_seconds()
+
+    # Performs a /api/v1/[path] GET request to Spark's monitoring API
+    def __request(self, path: str) -> Any:
+        return requests.get(f'http://localhost:4040/api/v1{path}').json()
+
+    # Performs a /api/v1/applications/[app-id]/[path] GET request to Spark's monitoring API
+    def __application_request(self, path: str) -> Any:
+        return self.__request(f'/applications/{self.application_id}{path}')
 
 # Abstraction for reusable PostgreSQL connection.
 class PostgreSQLContext(Context):
