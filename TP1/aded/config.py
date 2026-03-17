@@ -38,3 +38,6 @@ MAX_RELATIVE_ERROR = 0.001
 #  - Path are not changed on Deucalion Arm nodes (cna)
 #  - Paths are prepended with '/mnt' otherwise. Please mount the host's / on the container's /mnt.
 POSTGRES_PATH_PREFIX = '' if socket.gethostname().startswith('cna') else '/mnt'
+
+# Network interface to monitor. By default, only Deucalion's /dev/ib0 is monitored.
+NETWORK_INTERFACE = None if socket.gethostname().startswith('cna') else 'ib0'

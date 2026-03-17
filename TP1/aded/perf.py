@@ -24,6 +24,7 @@
 # SOURCE FILE --------------------------------------------------------------------------------------
 
 import argparse
+import dataclasses
 import datetime
 import json
 import re
@@ -60,6 +61,30 @@ def __get_disk_stats(pid: int | None) -> dict[str, int]:
                 disk_stats[match.group(1)] = int(match.group(2))
 
     return disk_stats
+
+# Network usage statistics (transmitted and received bytes and packets)
+@dataclasses.dataclass
+class NetStatistics:
+    rx_bytes:   int
+    rx_packets: int
+    tx_bytes:   int
+    tx_packets: int
+
+# Gets network usage statistics (transmitted and received bytes and packets) since boot
+def __get_net_stats() -> NetStatistics | None:
+    if not config.NETWORK_INTERFACE:
+        return None
+
+    # Helper for reading statistics files
+    def read_net_statistics_file(name: str) -> int:
+        with open(f'/sys/class/net/{config.NETWORK_INTERFACE}/statistics/{name}') as file:
+            return int(file.read())
+
+    # Load all files
+    return NetStatistics(
+        read_net_statistics_file('rx_bytes'), read_net_statistics_file('rx_packets'),
+        read_net_statistics_file('tx_bytes'), read_net_statistics_file('tx_packets')
+    )
 
 # Processes Spark monitoring metrics for the output file
 @typing.no_type_check
@@ -220,6 +245,7 @@ if __name__ == '__main__':
                 t0    = time.monotonic()
                 cpu0  = __get_working_cpu_time()
                 disk0 = __get_disk_stats(disk_monitoring_pid)
+                net0  = __get_net_stats()
 
                 query = query_class(config.MONTH, config.YEAR, datetime.date(config.YEAR, 1, 1))
                 query.load_dataset(context, args.dataset)
@@ -227,6 +253,7 @@ if __name__ == '__main__':
                 t1    = time.monotonic()
                 cpu1  = __get_working_cpu_time()
                 disk1 = __get_disk_stats(disk_monitoring_pid)
+                net1  = __get_net_stats()
 
                 query.process_dataset(context)
 
@@ -236,6 +263,7 @@ if __name__ == '__main__':
                 t2    = time.monotonic()
                 cpu2  = __get_working_cpu_time()
                 disk2 = __get_disk_stats(disk_monitoring_pid)
+                net2  = __get_net_stats()
 
                 # Cleanup context before next run
                 context.between_runs_cleanup()
@@ -268,6 +296,25 @@ if __name__ == '__main__':
                                 disk1['read_bytes'] - disk0['read_bytes']
                             run_entry[f'{tag}PhysicalWrittenBytes'] = \
                                 disk1['write_bytes'] - disk0['write_bytes']
+
+                    # Add network monitoring metrics
+                    if config.NETWORK_INTERFACE:
+                        assert net0 is not None
+                        assert net1 is not None
+                        assert net2 is not None
+
+                        net_tags = {
+                            'datasetLoad':    (net1, net0),
+                            'datasetProcess': (net2, net1),
+                            'total':          (net2, net0)
+                        }
+
+                        for tag, (net1, net0) in net_tags.items():
+                            run_entry[f'{tag}ReceivedBytes']   = net1.rx_bytes   - net0.rx_bytes
+                            run_entry[f'{tag}ReceivedPackets'] = net1.rx_packets - net0.rx_packets
+                            run_entry[f'{tag}SentBytes']       = net1.tx_bytes   - net0.tx_bytes
+                            run_entry[f'{tag}SentPackets']     = net1.tx_packets - net0.tx_packets
+
 
                     # Add additional Spark information if applicable
                     if isinstance(context, SparkContext):
