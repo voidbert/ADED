@@ -29,7 +29,9 @@ import json
 import socket
 import tempfile
 import time
+import typing
 
+from contexts import SparkContext
 import util
 
 # Hardcoded year and month for report results.
@@ -39,6 +41,109 @@ MONTH = 1
 # Parses a list of threads for a scalability analysis
 def __parse_thread_list(thread_list: str) -> list[int]:
     return [int(threads) for threads in thread_list.split(',')]
+
+# Processes Spark monitoring metrics for the output file
+@typing.no_type_check
+def __process_spark_metrics(context: SparkContext) -> typing.Any:
+    output_json = {
+        'jobs':                [],
+        'numJobs':             len(context.new_jobs),
+        'numStages':           0,
+        'numNonSkippedStages': 0,
+        'numTasks':            0,
+        'numNonSkippedTasks':  0,
+        'shuffleWriteBytes':   0,
+        'shuffleWriteRecords': 0,
+        'shuffleReadBytes':    0,
+        'shuffleReadRecords':  0,
+    }
+
+    # Process job, stage, and task data
+    transformed_jobs = []
+    for job_id, original_job in context.new_jobs.items():
+        # Select job metrics to keep
+        transformed_job = {
+            'jobId':         job_id,
+            'executionTime': SparkContext.time_delta(
+                original_job['submissionTime'], original_job['completionTime']
+            ),
+
+            'stages':              [],
+            'numStages':           len(original_job['stageIds']),
+            'numNonSkippedStages': 0,
+            'numTasks':            original_job['numTasks'],
+            'numNonSkippedTasks':  0,
+            'shuffleWriteBytes':   0,
+            'shuffleWriteRecords': 0,
+            'shuffleReadBytes':    0,
+            'shuffleReadRecords':  0,
+        }
+
+        # Process job stages
+        for stage_id in original_job['stageIds']:
+            # Select stage metrics to keep
+            original_stage    = context.new_stages[stage_id]
+            transformed_stage = {
+                'stageId': stage_id,
+                'skipped': original_stage['status'] == 'SKIPPED',
+
+                'executionTime':       0.0,
+                'shuffleWriteBytes':   original_stage['shuffleWriteBytes'],
+                'shuffleWriteRecords': original_stage['shuffleWriteRecords'],
+                'shuffleReadBytes':    original_stage['shuffleReadBytes'],
+                'shuffleReadRecords':  original_stage['shuffleReadRecords'],
+
+                'tasks':              [],
+                'numTasks':           original_stage['numTasks'],
+                'numNonSkippedTasks': len(original_stage['tasks'])
+            }
+
+            if original_stage['status'] != 'SKIPPED':
+                transformed_stage['executionTime'] = SparkContext.time_delta(
+                    original_stage['submissionTime'], original_stage['completionTime']
+                )
+
+            # Process stage tasks
+            for task_id, original_task in original_stage['tasks'].items():
+                transformed_task = {
+                    'taskId':        original_task['taskId'],
+
+                    'executionTime': original_task['duration'] / 1000.0,
+                    'shuffleWriteBytes':
+                        original_task['taskMetrics']['shuffleWriteMetrics']['bytesWritten'],
+                    'shuffleWriteRecords':
+                        original_task['taskMetrics']['shuffleWriteMetrics']['recordsWritten'],
+                    'shuffleReadBytes':
+                        original_task['taskMetrics']['shuffleReadMetrics']['localBytesRead'],
+                    'shuffleReadRecords':
+                        original_task['taskMetrics']['shuffleReadMetrics']['recordsRead'],
+                }
+
+                transformed_stage['tasks'].append(transformed_task)
+
+            # Update job statistics
+            transformed_job['numNonSkippedStages'] += original_stage['status'] != 'SKIPPED'
+            transformed_job['numNonSkippedTasks']  += transformed_stage['numNonSkippedTasks']
+            transformed_job['shuffleWriteBytes']   += transformed_stage['shuffleWriteBytes']
+            transformed_job['shuffleWriteRecords'] += transformed_stage['shuffleWriteRecords']
+            transformed_job['shuffleReadBytes']    += transformed_stage['shuffleReadBytes']
+            transformed_job['shuffleReadRecords']  += transformed_stage['shuffleReadRecords']
+
+            transformed_job['stages'].append(transformed_stage)
+
+        # Update global query statistics
+        output_json['numStages']           += transformed_job['numStages']
+        output_json['numNonSkippedStages'] += transformed_job['numNonSkippedStages']
+        output_json['numTasks']            += transformed_job['numTasks']
+        output_json['numNonSkippedTasks']  += transformed_job['numNonSkippedTasks']
+        output_json['shuffleWriteBytes']   += transformed_job['shuffleWriteBytes']
+        output_json['shuffleWriteRecords'] += transformed_job['shuffleWriteRecords']
+        output_json['shuffleReadBytes']    += transformed_job['shuffleReadBytes']
+        output_json['shuffleReadRecords']  += transformed_job['shuffleReadRecords']
+
+        output_json['jobs'].append(transformed_job)
+
+    return output_json
 
 if __name__ == '__main__':
     # Parse command-line arguments
@@ -85,7 +190,8 @@ if __name__ == '__main__':
             for run in range(warmup_runs + runs):
                 # User feedback
                 if run >= warmup_runs:
-                    print(f'Running: {nthread} threads -- run {run + 1 - warmup_runs}')
+                    run_number = run + 1 - warmup_runs
+                    print(f'Running: {nthread} threads -- run {run_number}')
                 else:
                     print(f'Running: {nthread} threads -- warmup run {run + 1}')
 
@@ -104,17 +210,23 @@ if __name__ == '__main__':
 
                 t2 = time.monotonic()
 
+                # Cleanup context before next run
+                context.between_runs_cleanup()
+
                 # Add non-warmup runs to output file
                 if run >= warmup_runs:
-                    scalability_entry['runs'].append({
+                    run_entry = {
+                        'run':                run_number,
                         'datasetLoadTime':    t1 - t0,
                         'datasetProcessTime': t2 - t1,
                         'totalTime':          t2 - t0
-                    })
+                    }
 
-                # Cleanup context before next run 
-                context.between_runs_cleanup()
+                    # Add additional Spark information if applicable
+                    if isinstance(context, SparkContext):
+                        run_entry['sparkMetrics'] = __process_spark_metrics(context)
 
+                    scalability_entry['runs'].append(run_entry)
 
         # Insert thread data into final file
         output_data['scalability'][str(nthread)] = scalability_entry
