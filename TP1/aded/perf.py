@@ -24,67 +24,19 @@
 # SOURCE FILE --------------------------------------------------------------------------------------
 
 import argparse
-import dataclasses
 import datetime
 import json
-import re
 import socket
 import tempfile
 import time
 import typing
 
-from aded import config, util
+from aded import config, hwmon, util
 from aded.contexts import SparkContext
 
 # Parses a list of threads for a scalability analysis
 def __parse_thread_list(thread_list: str) -> list[int]:
     return [int(threads) for threads in thread_list.split(',')]
-
-# Gets the number of seconds the CPU has been active since boot, normalized to the number of cores.
-def __get_working_cpu_time() -> float:
-    num_cpus = util.get_online_cpus()
-    with open('/proc/uptime', 'r') as f:
-        numbers = [float(x) for x in f.read().split()]
-        return (numbers[0] * num_cpus - numbers[1]) / num_cpus
-
-# Parses the disk stats from /proc/[pid]/io
-def __get_disk_stats(pid: int | None) -> dict[str, int]:
-    disk_stats: dict[str, int] = {}
-
-    if pid:
-        with open(f'/proc/{pid}/io', 'r') as file:
-            for line in file:
-                match = re.match(r'(\w+):\s+(\d+)', line)
-                if not match:
-                    continue
-
-                disk_stats[match.group(1)] = int(match.group(2))
-
-    return disk_stats
-
-# Network usage statistics (transmitted and received bytes and packets)
-@dataclasses.dataclass
-class NetStatistics:
-    rx_bytes:   int
-    rx_packets: int
-    tx_bytes:   int
-    tx_packets: int
-
-# Gets network usage statistics (transmitted and received bytes and packets) since boot
-def __get_net_stats() -> NetStatistics | None:
-    if not config.NETWORK_INTERFACE:
-        return None
-
-    # Helper for reading statistics files
-    def read_net_statistics_file(name: str) -> int:
-        with open(f'/sys/class/net/{config.NETWORK_INTERFACE}/statistics/{name}') as file:
-            return int(file.read())
-
-    # Load all files
-    return NetStatistics(
-        read_net_statistics_file('rx_bytes'), read_net_statistics_file('rx_packets'),
-        read_net_statistics_file('tx_bytes'), read_net_statistics_file('tx_packets')
-    )
 
 # Processes Spark monitoring metrics for the output file
 @typing.no_type_check
@@ -241,19 +193,19 @@ if __name__ == '__main__':
                 else:
                     print(f'Running: {nthread} threads -- warmup run {run + 1}')
 
-                # Measure dataset loading and query execution times
+                # Measure various hardware metrics for dataset loading and query execution
                 t0    = time.monotonic()
-                cpu0  = __get_working_cpu_time()
-                disk0 = __get_disk_stats(disk_monitoring_pid)
-                net0  = __get_net_stats()
+                cpu0  = hwmon.get_working_cpu_time()
+                disk0 = hwmon.get_disk_statistics(disk_monitoring_pid)
+                net0  = hwmon.get_net_statistics()
 
                 query = query_class(config.MONTH, config.YEAR, datetime.date(config.YEAR, 1, 1))
                 query.load_dataset(context, args.dataset)
 
                 t1    = time.monotonic()
-                cpu1  = __get_working_cpu_time()
-                disk1 = __get_disk_stats(disk_monitoring_pid)
-                net1  = __get_net_stats()
+                cpu1  = hwmon.get_working_cpu_time()
+                disk1 = hwmon.get_disk_statistics(disk_monitoring_pid)
+                net1  = hwmon.get_net_statistics()
 
                 query.process_dataset(context)
 
@@ -261,9 +213,9 @@ if __name__ == '__main__':
                     query.output_result(query_output_file.name)
 
                 t2    = time.monotonic()
-                cpu2  = __get_working_cpu_time()
-                disk2 = __get_disk_stats(disk_monitoring_pid)
-                net2  = __get_net_stats()
+                cpu2  = hwmon.get_working_cpu_time()
+                disk2 = hwmon.get_disk_statistics(disk_monitoring_pid)
+                net2  = hwmon.get_net_statistics()
 
                 # Cleanup context before next run
                 context.between_runs_cleanup()
@@ -282,6 +234,10 @@ if __name__ == '__main__':
 
                     # Add disk monitoring metrics
                     if disk_monitoring_pid:
+                        assert disk0 is not None
+                        assert disk1 is not None
+                        assert disk2 is not None
+
                         disk_tags = {
                             'datasetLoad':    (disk1, disk0),
                             'datasetProcess': (disk2, disk1),
@@ -289,13 +245,11 @@ if __name__ == '__main__':
                         }
 
                         for tag, (disk1, disk0) in disk_tags.items():
-                            run_entry[f'{tag}LogicalReadBytes']    = disk1['rchar'] - disk0['rchar']
-                            run_entry[f'{tag}LogicalWrittenBytes'] = disk1['wchar'] - disk0['wchar']
-
-                            run_entry[f'{tag}PhysicalReadBytes']    = \
-                                disk1['read_bytes'] - disk0['read_bytes']
-                            run_entry[f'{tag}PhysicalWrittenBytes'] = \
-                                disk1['write_bytes'] - disk0['write_bytes']
+                            disk                                    = disk1 - disk0
+                            run_entry[f'{tag}LogicalReadBytes']     = disk.logical_read_bytes
+                            run_entry[f'{tag}LogicalWrittenBytes']  = disk.logical_written_bytes
+                            run_entry[f'{tag}PhysicalReadBytes']    = disk.physical_read_bytes
+                            run_entry[f'{tag}PhysicalWrittenBytes'] = disk.physical_written_bytes
 
                     # Add network monitoring metrics
                     if config.NETWORK_INTERFACE:
@@ -310,10 +264,11 @@ if __name__ == '__main__':
                         }
 
                         for tag, (net1, net0) in net_tags.items():
-                            run_entry[f'{tag}ReceivedBytes']   = net1.rx_bytes   - net0.rx_bytes
-                            run_entry[f'{tag}ReceivedPackets'] = net1.rx_packets - net0.rx_packets
-                            run_entry[f'{tag}SentBytes']       = net1.tx_bytes   - net0.tx_bytes
-                            run_entry[f'{tag}SentPackets']     = net1.tx_packets - net0.tx_packets
+                            net                                   = net1 - net0
+                            run_entry[f'{tag}ReceivedBytes']      = net.rx_bytes
+                            run_entry[f'{tag}ReceivedPackets']    = net.rx_packets
+                            run_entry[f'{tag}TransmittedBytes']   = net.tx_bytes
+                            run_entry[f'{tag}TransmittedPackets'] = net.tx_packets
 
 
                     # Add additional Spark information if applicable
