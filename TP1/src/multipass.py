@@ -28,13 +28,10 @@ import os
 import re
 
 from contexts import Context, SparkContext
+from original import Original
 from query import Query
 
-class MultiPass(Query):
-    @staticmethod
-    def create_context(threads: int, **kwargs: object) -> Context:
-        return SparkContext(threads, **kwargs)
-
+class MultiPass(Original):
     def load_dataset(self, context: Context, dataset_path: str) -> None:
         # Get Spark session from context
         assert isinstance(context, SparkContext)

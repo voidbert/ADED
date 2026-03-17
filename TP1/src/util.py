@@ -35,7 +35,14 @@ def get_avaialable_queries() -> dict[str, type[Query]]:
     import postgresql
     import duck
 
-    return {query.__name__: query for query in Query.__subclasses__()} # type: ignore
+    return {
+        'Original':   original.Original,
+        'MultiPass':  multipass.MultiPass,
+        'SinglePass': singlepass.SinglePass,
+        'FastLoad':   fastload.FastLoad,
+        'PostgreSQL': postgresql.PostgreSQL,
+        'DuckDB':     duck.DuckDB
+    }
 
 # Returns how many threads should be used by the context (Spark, database, ...)
 def get_context_threads() -> int:
