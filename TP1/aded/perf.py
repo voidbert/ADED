@@ -28,6 +28,7 @@ import datetime
 import json
 import socket
 import statistics
+import sys
 import tempfile
 import time
 import typing
@@ -368,6 +369,8 @@ if __name__ == '__main__':
                     print(f'Running: {nthread} threads -- run {run_number}')
                 else:
                     print(f'Running: {nthread} threads -- warmup run {run + 1}')
+
+                sys.stdout.flush()
 
                 # Measure various hardware metrics for dataset loading and query execution
                 t0    = time.monotonic()
