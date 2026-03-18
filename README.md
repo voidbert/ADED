@@ -1,4 +1,4 @@
-# AP
+# ADED
 
 Assignments for UMinho's High Performance Data Analysis 2025/26 class.
 
