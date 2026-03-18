@@ -66,6 +66,14 @@ dependencies = [
     'psutil==7.2.2'
 ]
 
+optional-dependencies.dev = [
+    'mypy==1.19.1',
+    'types-psycopg2==2.9.21.20260223',
+    'types-psutil==7.2.2.20260130',
+    'types-requests==2.32.4.20260107',
+    'types-python-dateutil==2.9.0.20260305'
+]
+
 [project.urls]
 Homepage      = 'https://github.com/voidbert/ADED'
 Repository    = 'https://github.com/voidbert/ADED'
