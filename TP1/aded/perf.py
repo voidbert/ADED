@@ -44,6 +44,7 @@ def __format_spark_metrics(context: SparkContext) -> typing.Any:
     spark_metrics = {
         'jobs':                [],
         'numJobs':             len(context.new_jobs),
+        'executionTime':       0.0,
         'numStages':           0,
         'numNonSkippedStages': 0,
         'numTasks':            0,
@@ -55,11 +56,19 @@ def __format_spark_metrics(context: SparkContext) -> typing.Any:
     }
 
     # Process job, stage, and task data
-    transformed_jobs = []
+    earliest_timestamp = datetime.datetime.max
+    latest_timestamp   = datetime.datetime.min
+    query_working_time = 0.0
+
+    min_tasks_per_stage = 1_000_000
+    max_tasks_per_stage = 0
+
+    transformed_jobs   = []
     for job_id, original_job in context.new_jobs.items():
         # Select job metrics to keep
         transformed_job = {
             'jobId':         job_id,
+            'name':          original_job['name'],
             'executionTime': SparkContext.time_delta(
                 original_job['submissionTime'], original_job['completionTime']
             ),
@@ -72,10 +81,11 @@ def __format_spark_metrics(context: SparkContext) -> typing.Any:
             'shuffleWriteBytes':   0,
             'shuffleWriteRecords': 0,
             'shuffleReadBytes':    0,
-            'shuffleReadRecords':  0,
+            'shuffleReadRecords':  0
         }
 
         # Process job stages
+        job_working_time = 0.0
         for stage_id in original_job['stageIds']:
             # Select stage metrics to keep
             original_stage    = context.new_stages[stage_id]
@@ -99,7 +109,17 @@ def __format_spark_metrics(context: SparkContext) -> typing.Any:
                     original_stage['submissionTime'], original_stage['completionTime']
                 )
 
+                # Update query task statistics
+                min_tasks_per_stage = min(
+                    min_tasks_per_stage, transformed_stage['numNonSkippedTasks']
+                )
+
+                max_tasks_per_stage = max(
+                    max_tasks_per_stage, transformed_stage['numNonSkippedTasks']
+                )
+
             # Process stage tasks
+            stage_working_time = 0.0
             for task_id, original_task in original_stage['tasks'].items():
                 transformed_task = {
                     'taskId':        original_task['taskId'],
@@ -115,7 +135,15 @@ def __format_spark_metrics(context: SparkContext) -> typing.Any:
                         original_task['taskMetrics']['shuffleReadMetrics']['recordsRead'],
                 }
 
+                stage_working_time += original_task['duration'] / 1000.0
                 transformed_stage['tasks'].append(transformed_task)
+
+            # Compute working time ratio (for load imbalance estimation)
+            multithread_stage_time = transformed_stage['executionTime'] * context.threads
+            if multithread_stage_time:
+                transformed_stage['workingTimeRatio'] = stage_working_time / multithread_stage_time
+            else:
+                transformed_stage['workingTimeRatio'] = 1.0
 
             # Update job statistics
             transformed_job['numNonSkippedStages'] += original_stage['status'] != 'SKIPPED'
@@ -125,7 +153,15 @@ def __format_spark_metrics(context: SparkContext) -> typing.Any:
             transformed_job['shuffleReadBytes']    += transformed_stage['shuffleReadBytes']
             transformed_job['shuffleReadRecords']  += transformed_stage['shuffleReadRecords']
 
+            job_working_time += stage_working_time
             transformed_job['stages'].append(transformed_stage)
+
+        # Compute working time ratio (for load imbalance estimation)
+        multithread_job_time = transformed_job['executionTime'] * context.threads
+        if multithread_job_time:
+            transformed_job['workingTimeRatio'] = job_working_time / multithread_job_time
+        else:
+            transformed_job['workingTimeRatio'] = 1.0
 
         # Update global query statistics
         spark_metrics['numStages']           += transformed_job['numStages']
@@ -137,7 +173,28 @@ def __format_spark_metrics(context: SparkContext) -> typing.Any:
         spark_metrics['shuffleReadBytes']    += transformed_job['shuffleReadBytes']
         spark_metrics['shuffleReadRecords']  += transformed_job['shuffleReadRecords']
 
+        earliest_timestamp = min(
+            earliest_timestamp,
+            SparkContext.parse_time(original_job['submissionTime'])
+        )
+        latest_timestamp = max(
+            latest_timestamp,
+            SparkContext.parse_time(original_job['completionTime'])
+        )
+        query_working_time += job_working_time
         spark_metrics['jobs'].append(transformed_job)
+
+    # Compute query task metrics
+    spark_metrics['minNonSkippedTasksPerStage'] = min_tasks_per_stage
+    spark_metrics['maxNonSkippedTasksPerStage'] = max_tasks_per_stage
+
+    # Compute working time ratio (for load imbalance estimation)
+    spark_metrics['executionTime'] = (latest_timestamp - earliest_timestamp).total_seconds()
+    multithread_query_time = spark_metrics['executionTime'] * context.threads
+    if multithread_query_time:
+        spark_metrics['workingTimeRatio'] = query_working_time / multithread_query_time
+    else:
+        spark_metrics['workingTimeRatio'] = 1.0
 
     return spark_metrics
 

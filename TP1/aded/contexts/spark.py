@@ -36,6 +36,7 @@ from aded.contexts.context import Context
 class SparkContext(Context):
     def __init__(self, threads: int, **kwargs: object) -> None:
         # Necessary state for analysis of Spark performance metrics
+        self.threads                           = threads
         self.event_logging                     = bool(kwargs.get('events', ''))
         self.next_requested_job                = 0    # First new job id since last cleanup
         self.next_requested_stage              = 0    # First new stage id since last cleanup
@@ -96,17 +97,16 @@ class SparkContext(Context):
         spark_process = next(child for child in children if child.name() == 'java')
         return spark_process.pid
 
-    # Caculates the difference in time (in seconds) between Spark timestamps.
+    # Parses a Spark timestamp
+    @staticmethod
+    def parse_time(time: str) -> datetime:
+        return datetime.fromisoformat(re.sub('[A-Z]+$', '', time))
+
+    # Calculates the difference in time (in seconds) between Spark timestamps
     @staticmethod
     def time_delta(start: str, end: str) -> float:
-        # Replace timezone for ISO 8601 parsing
-        start = re.sub('[A-Z]+$', '+00:00', start)
-        end   = re.sub('[A-Z]+$', '+00:00', end)
-
-        # Parse dates and return difference
-        start_date = datetime.fromisoformat(start)
-        end_date   = datetime.fromisoformat(end)
-        return (end_date - start_date).total_seconds()
+        delta = SparkContext.parse_time(end) - SparkContext.parse_time(start)
+        return delta.total_seconds()
 
     # Performs a /api/v1/[path] GET request to Spark's monitoring API
     def __request(self, path: str) -> Any:
