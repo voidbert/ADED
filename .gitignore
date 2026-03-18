@@ -18,6 +18,7 @@ TP1/build/
 TP1/dist/
 
 # TP1-generated files
+TP1/**/*.out
 TP1/**/*.json
 TP1/**/*.tex
 !TP1/report/*.tex
