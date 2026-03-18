@@ -21,6 +21,7 @@
 #
 # SOURCE FILE --------------------------------------------------------------------------------------
 
+from __future__ import annotations
 from types import TracebackType
 
 # Abstraction for a reusable Spark session or database connection.
