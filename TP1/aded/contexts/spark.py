@@ -37,34 +37,17 @@ class SparkContext(Context):
     def __init__(self, threads: int, **kwargs: object) -> None:
         # Necessary state for analysis of Spark performance metrics
         self.threads                         = threads
-        self.event_logging                   = bool(kwargs.get('events', ''))
+        self.monitoring                      = bool(kwargs.get('monitoring', False))
         self.next_requested_job              = 0    # First new job id since last cleanup
         self.new_jobs: dict[str, Any] | None = None # New jobs since last cleanup
         self.stages:   dict[str, Any] | None = None # All stages
 
-        if self.event_logging:
-            # Create directory for storing events
-            assert isinstance(kwargs['events'], str)
-            events_dir = os.path.abspath(kwargs['events'])
+        # Create Spark session
+        self.spark = SparkSession.builder.master(f'local[{threads}]') \
+                                         .appName('deucalion-query')  \
+                                         .getOrCreate()
 
-            try:
-                os.mkdir(events_dir)
-            except FileExistsError:
-                pass
-
-            # Create Spark session with event logging
-            self.spark = SparkSession.builder.master(f'local[{threads}]')              \
-                                             .appName('deucalion-query')               \
-                                             .config('spark.eventLog.enabled', 'true') \
-                                             .config('spark.eventLog.dir', events_dir) \
-                                             .getOrCreate()
-        else:
-            # Create Spark session without event logging
-            self.spark = SparkSession.builder.master(f'local[{threads}]') \
-                                             .appName('deucalion-query')  \
-                                             .getOrCreate()
-
-        if self.event_logging:
+        if self.monitoring:
             self.application_id = self.__request('/applications')[0]['id']
         else:
             self.application_id = ''
@@ -76,7 +59,7 @@ class SparkContext(Context):
         self.spark.sparkContext._jvm.System.gc() # type: ignore
 
         # Request new jobs and stages that were not present in the last query's results
-        if self.event_logging:
+        if self.monitoring:
             all_jobs                = self.__application_request(f'/jobs')
             new_jobs_list           = all_jobs[:len(all_jobs) - self.next_requested_job]
             self.new_jobs           = {job['jobId']: job for job in new_jobs_list[::-1]}
