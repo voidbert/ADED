@@ -35,7 +35,7 @@ class PostgreSQLContext(Context):
             host='localhost',
             port=5432,
             database='postgres',
-            user='postgres'
+            user=config.POSTGRES_USER
         )
 
         self.cursor = self.connection.cursor()
