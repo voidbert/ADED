@@ -21,5 +21,6 @@ TP1/dist/
 TP1/**/*.out
 TP1/**/*.json
 TP1/**/*.tex
+TP1/results/**
 !TP1/report/*.tex
 TP1/report/*.pdf

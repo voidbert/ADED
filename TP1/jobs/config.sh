@@ -24,8 +24,23 @@
 # Path to the Python virtual environment. Will be automatically created by setup-env.sh.
 VENV_PATH=".venv"
 
-# Path where to copy the original dataset from.
+# Path to the original dataset, that will be copied.
 ORIGINAL_DATASET_PATH="/projects/F202500010HPCVLABUMINHO/DataSets/Reports"
 
-# Path where the original dataset will be copied to. Will be used in normal query runs.
+# Path where the original dataset will be copied to. Used in normal query runs.
 DATASET_PATH="dataset"
+
+# Year of the dataset to process.
+YEAR="2025"
+
+# Path to the PostgreSQL database that will be created for testing the PostgreSQL query.
+POSTGRESQL_DATABASE="/tmp/aded-postgres"
+
+# Space-separated list of query classes to measure performance of
+PERF_QUERY_CLASSES="Original MultiPass SinglePass FastLoad PostgreSQL DuckDB"
+
+# Number of runs per query class
+PERF_RUNS=5
+
+# Number of warmum runs per query class
+PERF_WARMUP_RUNS=5
