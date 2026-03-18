@@ -27,6 +27,7 @@ import argparse
 import datetime
 import json
 import socket
+import statistics
 import tempfile
 import time
 import typing
@@ -55,7 +56,7 @@ def __format_spark_metrics(context: SparkContext) -> typing.Any:
         'shuffleReadRecords':  0,
     }
 
-    # Process job, stage, and task data
+    # Process jobs
     earliest_timestamp = datetime.datetime.max
     latest_timestamp   = datetime.datetime.min
     query_working_time = 0.0
@@ -88,7 +89,7 @@ def __format_spark_metrics(context: SparkContext) -> typing.Any:
         job_working_time = 0.0
         for stage_id in original_job['stageIds']:
             # Select stage metrics to keep
-            original_stage    = context.new_stages[stage_id]
+            original_stage    = context.stages[stage_id]
             transformed_stage = {
                 'stageId': stage_id,
                 'skipped': original_stage['status'] == 'SKIPPED',
@@ -242,6 +243,81 @@ def __format_net_metrics(
 
     return net_metrics
 
+# Calculates statistics for many metrics, across all runs for a given number of threads
+def __generate_all_runs_statistics(runs: list[dict[str, typing.Any]]) -> dict[str, typing.Any]:
+    # List of metrics for which to calculate the mean and standard deviation
+    mean_stdev_metrics = [
+        ('', 'datasetLoadTime'),
+        ('', 'datasetProcessTime'),
+        ('', 'totalTime'),
+        ('cpuMetrics', 'datasetLoadCPUUsage'),
+        ('cpuMetrics', 'datasetProcessCPUUsage'),
+        ('cpuMetrics', 'totalCPUUsage')
+    ]
+
+    if 'sparkMetrics' in runs[0]:
+        mean_stdev_metrics.extend([
+            ('sparkMetrics', 'executionTime'),
+            ('sparkMetrics', 'shuffleReadBytes'),
+            ('sparkMetrics', 'shuffleReadRecords'),
+            ('sparkMetrics', 'shuffleWriteBytes'),
+            ('sparkMetrics', 'shuffleWriteRecords'),
+            ('sparkMetrics', 'workingTimeRatio')
+        ])
+
+    if 'diskMetrics' in runs[0]:
+        for tag in ['datasetLoad', 'datasetProcess', 'total']:
+            mean_stdev_metrics.extend([
+                ('diskMetrics', f'{tag}LogicalReadBytes'),
+                ('diskMetrics', f'{tag}LogicalWrittenBytes'),
+                ('diskMetrics', f'{tag}PhysicalReadBytes'),
+                ('diskMetrics', f'{tag}PhysicalWrittenBytes')
+            ])
+
+    if 'netMetrics' in runs[0]:
+        for tag in ['datasetLoad', 'datasetProcess', 'total']:
+            mean_stdev_metrics.extend([
+                ('netMetrics', f'{tag}ReceivedBytes'),
+                ('netMetrics', f'{tag}ReceivedPackets'),
+                ('netMetrics', f'{tag}TransmittedBytes'),
+                ('netMetrics', f'{tag}TransmittedPackets')
+            ])
+
+    # Calculate means and standard deviations
+    output_statistics: dict[str, typing.Any] = {}
+    for namespace_name, metric_name in mean_stdev_metrics:
+        # Get input values and namespace (dictionary) where to insert the properties
+        if namespace_name:
+            output_statistics.setdefault(namespace_name, {})
+            input_values     = [run[namespace_name][metric_name] for run in runs]
+            output_namespace = output_statistics[namespace_name]
+        else:
+            input_values     = [run[metric_name] for run in runs]
+            output_namespace = output_statistics
+
+        # Calculate mean and standard deviation
+        output_namespace[f'{metric_name}Mean']  = statistics.mean(input_values)
+
+        if len(runs) > 1:
+            output_namespace[f'{metric_name}Stdev'] = statistics.stdev(input_values)
+
+    # Copy important Spark query metrics
+    if 'sparkMetrics' in runs[0]:
+        spark_copy_metrics = [
+            'numJobs',
+            'numStages',
+            'numNonSkippedStages',
+            'numTasks',
+            'numNonSkippedTasks',
+            'minNonSkippedTasksPerStage',
+            'maxNonSkippedTasksPerStage'
+        ]
+
+        for metric in spark_copy_metrics:
+            output_statistics['sparkMetrics'][metric] = runs[0]['sparkMetrics'][metric]
+
+    return output_statistics
+
 if __name__ == '__main__':
     # Parse command-line arguments
     queries = util.get_avaialable_queries()
@@ -353,10 +429,11 @@ if __name__ == '__main__':
                         assert net2 is not None
                         run_entry['netMetrics'] = __format_net_metrics(net0, net1, net2)
 
-                    # Add runt to list of runs
+                    # Add run to list of runs
                     scalability_entry['runs'].append(run_entry)
 
-        # Add thread data to final file
+        # Add thread data to final file and calculate statistics
+        scalability_entry['statistics'] = __generate_all_runs_statistics(scalability_entry['runs'])
         output_data['scalability'][str(nthread)] = scalability_entry
 
     # Output file data

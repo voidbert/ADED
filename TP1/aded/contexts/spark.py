@@ -36,12 +36,11 @@ from aded.contexts.context import Context
 class SparkContext(Context):
     def __init__(self, threads: int, **kwargs: object) -> None:
         # Necessary state for analysis of Spark performance metrics
-        self.threads                           = threads
-        self.event_logging                     = bool(kwargs.get('events', ''))
-        self.next_requested_job                = 0    # First new job id since last cleanup
-        self.next_requested_stage              = 0    # First new stage id since last cleanup
-        self.new_jobs:   dict[str, Any] | None = None # New jobs since last cleanup
-        self.new_stages: dict[str, Any] | None = None # New stages since last cleanup
+        self.threads                         = threads
+        self.event_logging                   = bool(kwargs.get('events', ''))
+        self.next_requested_job              = 0    # First new job id since last cleanup
+        self.new_jobs: dict[str, Any] | None = None # New jobs since last cleanup
+        self.stages:   dict[str, Any] | None = None # All stages
 
         if self.event_logging:
             # Create directory for storing events
@@ -83,10 +82,8 @@ class SparkContext(Context):
             self.new_jobs           = {job['jobId']: job for job in new_jobs_list[::-1]}
             self.next_requested_job = len(all_jobs)
 
-            all_stages                = self.__application_request(f'/stages?details=true')
-            new_stages_list           = all_stages[:len(all_stages) - self.next_requested_stage]
-            self.new_stages           = {stage['stageId']: stage for stage in new_stages_list[::-1]}
-            self.next_requested_stage = len(all_stages)
+            all_stages  = self.__application_request(f'/stages?details=true')
+            self.stages = {stage['stageId']: stage for stage in all_stages[::-1]}
 
     def final_cleanup(self) -> None:
         self.spark.stop()
