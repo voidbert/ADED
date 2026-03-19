@@ -44,3 +44,9 @@ PERF_RUNS=5
 
 # Number of warmum runs per query class
 PERF_WARMUP_RUNS=5
+
+# Space-separated list of query classes to perform scalability analyses of
+SCALABILITY_QUERY_CLASSES="FastLoad DuckDB"
+
+# Comma-separated list of thread numbers used to perform scalability analyses
+SCALABILITY_THREADS="1,2,4,8,12,24,36,48"
