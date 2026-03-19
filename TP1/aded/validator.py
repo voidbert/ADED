@@ -61,7 +61,7 @@ def check_diff_for_fp_errors(diff_result: str) -> bool:
             if error > config.MAX_RELATIVE_ERROR:
                 return False
 
-        except ValueError, ZeroDivisionError:
+        except (ValueError, ZeroDivisionError):
             # Casting errors -> not floats -> string differences -> fail
             # Division error -> original is 0 and the other value is not -> fail
             return False
