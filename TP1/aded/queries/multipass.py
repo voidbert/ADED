@@ -131,32 +131,30 @@ class MultiPass(Original):
             hours: dict[str, int] = {'arm': 0, 'amd': 0, 'gpu': 0}
 
             # Group job count and hours by month, partition, account, and state
-            aggregated_results = self.data.filter(F.col('Period').isin(months))                \
-                                          .groupby('Period', 'cluster', 'Agency', 'COMPLETED') \
+            aggregated_results = self.data.filter(F.col('Period').isin(months))      \
+                                          .groupby('cluster', 'Agency', 'COMPLETED') \
                                           .agg(
                                               F.count('*').alias('job_count'),
                                               F.sum('totalJobSeconds').alias('total_secs')
                                           ).collect()
 
             for row in aggregated_results:
-                if row.Period in months:
+                # Count complete and failed jobs per cluster
+                if row.COMPLETED == 'COMPLETED':
+                    self.output_parameters[f'{row.cluster}CompletedJobs{tag}'] += row.job_count
+                else:
+                    self.output_parameters[f'{row.cluster}FailedJobs{tag}'] += row.job_count
 
-                    # Count complete and failed jobs per cluster
-                    if row.COMPLETED == 'COMPLETED':
-                        self.output_parameters[f'{row.cluster}CompletedJobs{tag}'] += row.job_count
-                    else:
-                        self.output_parameters[f'{row.cluster}FailedJobs{tag}'] += row.job_count
+                # Count jobs and hours per cluster
+                if row.Agency != 'LOCAL':
+                    hours[row.cluster]                                += row.total_secs
+                    self.output_parameters[f'{row.cluster}Jobs{tag}'] += row.job_count
 
-                    # Count jobs and hours per cluster
-                    if row.Agency != 'LOCAL':
-                        hours[row.cluster]                                += row.total_secs
-                        self.output_parameters[f'{row.cluster}Jobs{tag}'] += row.job_count
+                for k, v in hours.items():
+                    self.output_parameters[f'{k}usedhours{tag}'] = v / 3600
 
-                    for k, v in hours.items():
-                        self.output_parameters[f'{k}usedhours{tag}'] = v / 3600
-
-                    # Count EuroHPC jobs and hours
-                    if row.Agency == 'EHPC':
-                        self.output_parameters[f'{row.cluster}usedhoursEuroHPC{tag}'] += \
-                            row.total_secs / 3600
-                        self.output_parameters[f'{row.cluster}JobsEuroHPC{tag}'] += row.job_count
+                # Count EuroHPC jobs and hours
+                if row.Agency == 'EHPC':
+                    self.output_parameters[f'{row.cluster}usedhoursEuroHPC{tag}'] += \
+                        row.total_secs / 3600
+                    self.output_parameters[f'{row.cluster}JobsEuroHPC{tag}'] += row.job_count
