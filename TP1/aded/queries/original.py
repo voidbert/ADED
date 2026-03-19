@@ -193,11 +193,11 @@ class Original(Query):
 
             # Count EuroHPC jobs
             ehpc_job_query_result = self.data.filter(F.col('Period').isin(months)) \
-                                            .groupby(['Agency', 'cluster'])       \
-                                            .count()                              \
-                                            .orderBy('Agency')                    \
-                                            .filter(F.col('Agency') == 'EHPC')    \
-                                            .collect()
+                                             .groupby(['Agency', 'cluster'])       \
+                                             .count()                              \
+                                             .orderBy('Agency')                    \
+                                             .filter(F.col('Agency') == 'EHPC')    \
+                                             .collect()
 
             for row in ehpc_job_query_result:
                 self.output_parameters[f'{row.cluster.lower()}JobsEuroHPC{tag}'] = \
