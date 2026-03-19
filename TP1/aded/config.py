@@ -29,7 +29,7 @@ import socket
 YEAR = 2025
 
 # Hardcoded month (1-12) for performance analysis reports.
-MONTH = 1
+MONTH = 12
 
 # Maxmimum allowed relative floating-point error (0.1 %) in output validation
 MAX_RELATIVE_ERROR = 0.001
