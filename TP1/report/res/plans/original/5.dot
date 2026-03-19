@@ -1,0 +1,89 @@
+digraph SparkLogicalPlanOg5 {
+
+    // === Global configuration ===
+
+    graph [
+        rankdir  = BT,
+        ranksep  = 0.7,
+        splines  = true,
+        sep      = "+0.2",
+        fontname = "Helvetica",
+        bgcolor  = "transparent"
+    ];
+
+    node [
+        fontname  = "Helvetica",
+        fontsize  = 11,
+        shape     = record,
+        style     = "filled,rounded",
+        penwidth  = 0.5,
+        margin    = "0.25,0.14",
+        fillcolor = "#FAECE7",
+        color     = "#993C1D",
+        fontcolor = "#712B13"
+    ];
+
+    edge [
+        fontname  = "Helvetica",
+        fontsize  = 10,
+        color     = "black",
+        arrowsize = 0.7,
+        penwidth  = 0.8
+    ];
+
+
+    // === Nodes ===
+
+    relation_1  [label = "{Relation #1 | Read CSV #1\n}"];
+    filter_1    [label = "{Filter   #1 | Filter column Account\n}"];
+    project_1_1 [label = "{Project  #1 |
+                           withColumn: [ cluster, Agency, OldVNodes, VNodes ]\l
+                           passthrough: all other columns needed for output\l}"];
+    project_2_1 [label = "{Project  #1 |
+                           withColumn: [ totalJobSeconds ]\l
+                           passthrough: all other columns needed for output\l}"];
+
+    ellipsis [
+        label     = "...",
+        shape     = plaintext,
+        style     = "",
+        fontsize  = 20,
+        fontcolor = "black"
+    ];
+
+    relation_12  [label = "{Relation #12 | Read CSV #12\n}"];
+    filter_12    [label = "{Filter   #12 | Filter column Account\n}"];
+    project_1_12 [label = "{Project  #12 |
+                           withColumn: [ cluster, Agency, OldVNodes, VNodes ]\l
+                           passthrough: all other columns needed for output\l}"];
+    project_2_12 [label = "{Project  #12 |
+                           withColumn: [ totalJobSeconds ]\l
+                           passthrough: all other columns needed for output\l}"];
+
+    union [label = "{Union | Union all 12 Relation/Filter/Project/Project\n}"];
+
+    aggregate [
+        label = "{Aggregate |
+                  groupBy:  [ Agency, cluster ]\l
+                  aggregate:  sum()\l
+                  output:  [ Agency, cluster, sum(jobIDRaw), sum(ElapsedRaw), sum(AllocCPUS),\l
+                             sum(CPUTimeRAW), sum(NNodes), sum(AllocNodes), sum(NCPUS),\l
+                             sum(ReservationId), sum(OldVNodes), sum(VNodes), sum(totalJobSeconds) ]\l}"
+    ];
+
+    // === Edges ===
+
+    relation_1  -> filter_1;
+    filter_1    -> project_1_1;
+    project_1_1 -> project_2_1;
+
+    relation_12  -> filter_12;
+    filter_12    -> project_1_12;
+    project_1_12 -> project_2_12;
+
+    project_2_1  -> union;
+    ellipsis     -> union;
+    project_2_12 -> union;
+
+    union     -> aggregate
+}

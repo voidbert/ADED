@@ -1,0 +1,53 @@
+digraph SparkLogicalPlanMultipassOneMonth {
+
+    // === Global configuration ===
+
+    graph [
+        rankdir  = BT,
+        ranksep  = 0.7,
+        splines  = true,
+        sep      = "+0.2",
+        fontname = "Helvetica",
+        bgcolor  = "transparent"
+    ];
+
+    node [
+        fontname  = "Helvetica",
+        fontsize  = 11,
+        shape     = record,
+        style     = "filled,rounded",
+        penwidth  = 0.5,
+        margin    = "0.25,0.14",
+        fillcolor = "#FAECE7",
+        color     = "#993C1D",
+        fontcolor = "#712B13"
+    ];
+
+    edge [
+        fontname  = "Helvetica",
+        fontsize  = 10,
+        color     = "black",
+        arrowsize = 0.7,
+        penwidth  = 0.8
+    ];
+
+
+    // === Nodes ===
+
+    relation [label = "{Relation | Read CSV\n}"];
+    project  [label = "{Project  |
+                        withColumn: [ COMPLETED, Period, cluster, Agency, totalJobSeconds ]\n}"];
+
+    aggregate [
+        label = "{Aggregate |
+                  groupBy:    [ Period, cluster, Agency, COMPLETED ]\l
+                  aggregate:  count(1) AS job_count\l
+                  aggregate:  sum(totalJobSeconds) AS total_secs\l
+                  output:     [ Period, cluster, Agency, COMPLETED, job_count, total_secs ]\l}"
+    ];
+
+    // === Edges ===
+
+    relation -> project
+    project  -> aggregate
+}

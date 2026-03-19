@@ -1,0 +1,56 @@
+digraph SparkLogicalPlanOgOneMonth {
+
+    // === Global configuration ===
+
+    graph [
+        rankdir  = BT,
+        ranksep  = 0.7,
+        splines  = true,
+        sep      = "+0.2",
+        fontname = "Helvetica",
+        bgcolor  = "transparent"
+    ];
+
+    node [
+        fontname  = "Helvetica",
+        fontsize  = 11,
+        shape     = record,
+        style     = "filled,rounded",
+        penwidth  = 0.5,
+        margin    = "0.25,0.14",
+        fillcolor = "#FAECE7",
+        color     = "#993C1D",
+        fontcolor = "#712B13"
+    ];
+
+    edge [
+        fontname  = "Helvetica",
+        fontsize  = 10,
+        color     = "black",
+        arrowsize = 0.7,
+        penwidth  = 0.8
+    ];
+
+
+    // === Nodes ===
+
+    relation [label = "{Relation | Read CSV \n}"];
+    filter   [label = "{Filter   | Filter column Account\n}"];
+    project  [label = "{Project  | withColumn: [ cluster, Agency ]\n}"];
+
+    aggregate [
+        label = "{Aggregate |
+                  groupBy:  [ Agency, cluster ]\l
+                  aggregate:  count(1) AS count\l
+                  output:  [ Agency, cluster, count ]\l}"
+    ];
+
+    sort [label = "{Sort | orderBy:  Agency\n}"];
+
+    // === Edges ===
+
+    relation -> filter
+    filter -> project;
+    project   -> aggregate;
+    aggregate -> sort
+}
