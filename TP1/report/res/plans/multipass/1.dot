@@ -1,4 +1,4 @@
-digraph SparkLogicalPlanMultipass {
+digraph SparkLogicalPlanMultipassYear {
 
     // === Global configuration ===
 
@@ -36,7 +36,7 @@ digraph SparkLogicalPlanMultipass {
 
     relation_1 [label = "{Relation #1 | Read CSV #1\n}"];
     project_1  [label = "{Project  #1 |
-                          withColumn: [ Period, cluster, Agency, totalJobSeconds ]\n}"];
+                          withColumn: [ COMPLETED, cluster, Agency, totalJobSeconds ]\n}"];
 
     ellipsis [
         label     = "...",
@@ -48,16 +48,16 @@ digraph SparkLogicalPlanMultipass {
 
     relation_12 [label = "{Relation #12 | Read CSV #12\n}"];
     project_12  [label = "{Project  #12 |
-                          withColumn: [ Period, cluster, Agency, totalJobSeconds ]\n}"];
+                          withColumn: [ COMPLETED, cluster, Agency, totalJobSeconds ]\n}"];
 
     union [label = "{Union | Union all 12 Relation/Project pairs\n}"];
 
     aggregate [
         label = "{Aggregate |
-                  groupBy:  [ Period, cluster, Agency, COMPLETED ]\l
+                  groupBy:  [ cluster, Agency, COMPLETED ]\l
                   aggregate:  count(1) AS job_count\l
                   aggregate:  sum(totalJobSeconds) AS total_secs\l
-                  output:  [ Period, cluster, Agency, COMPLETED, job_count, total_secs ]\l}"
+                  output:  [ cluster, Agency, COMPLETED, job_count, total_secs ]\l}"
     ];
 
     // === Edges ===

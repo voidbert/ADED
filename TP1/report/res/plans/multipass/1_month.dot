@@ -36,14 +36,14 @@ digraph SparkLogicalPlanMultipassOneMonth {
 
     relation [label = "{Relation | Read CSV\n}"];
     project  [label = "{Project  |
-                        withColumn: [ COMPLETED, Period, cluster, Agency, totalJobSeconds ]\n}"];
+                        withColumn: [ COMPLETED, cluster, Agency, totalJobSeconds ]\n}"];
 
     aggregate [
         label = "{Aggregate |
-                  groupBy:    [ Period, cluster, Agency, COMPLETED ]\l
+                  groupBy:    [ cluster, Agency, COMPLETED ]\l
                   aggregate:  count(1) AS job_count\l
                   aggregate:  sum(totalJobSeconds) AS total_secs\l
-                  output:     [ Period, cluster, Agency, COMPLETED, job_count, total_secs ]\l}"
+                  output:     [ cluster, Agency, COMPLETED, job_count, total_secs ]\l}"
     ];
 
     // === Edges ===
