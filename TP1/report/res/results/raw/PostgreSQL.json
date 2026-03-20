@@ -1,0 +1,179 @@
+{
+    "query": "PostgreSQL",
+    "hostname": "cna0268.deucalion.macc.fccn.pt",
+    "scalability": {
+        "48": {
+            "threads": 48,
+            "contextInitTime": 0.20324212103150785,
+            "runs": [
+                {
+                    "run": 1,
+                    "datasetLoadTime": 6.242443695082329,
+                    "datasetProcessTime": 0.7310937689617276,
+                    "totalTime": 6.973537464044057,
+                    "cpuMetrics": {
+                        "datasetLoadCPUUsage": -0.1609612702473593,
+                        "datasetProcessCPUUsage": 0.2898055062147764,
+                        "totalCPUUsage": -0.1137036505348929
+                    },
+                    "netMetrics": {
+                        "datasetLoadReceivedBytes": 4700,
+                        "datasetLoadReceivedPackets": 47,
+                        "datasetLoadTransmittedBytes": 0,
+                        "datasetLoadTransmittedPackets": 0,
+                        "datasetProcessReceivedBytes": 600,
+                        "datasetProcessReceivedPackets": 6,
+                        "datasetProcessTransmittedBytes": 0,
+                        "datasetProcessTransmittedPackets": 0,
+                        "totalReceivedBytes": 5300,
+                        "totalReceivedPackets": 53,
+                        "totalTransmittedBytes": 0,
+                        "totalTransmittedPackets": 0
+                    }
+                },
+                {
+                    "run": 2,
+                    "datasetLoadTime": 6.233040575985797,
+                    "datasetProcessTime": 0.6994007889879867,
+                    "totalTime": 6.9324413649737835,
+                    "cpuMetrics": {
+                        "datasetLoadCPUUsage": 0.08235680917200751,
+                        "datasetProcessCPUUsage": 0.11617087273254666,
+                        "totalCPUUsage": 0.08576824556043781
+                    },
+                    "netMetrics": {
+                        "datasetLoadReceivedBytes": 4600,
+                        "datasetLoadReceivedPackets": 46,
+                        "datasetLoadTransmittedBytes": 0,
+                        "datasetLoadTransmittedPackets": 0,
+                        "datasetProcessReceivedBytes": 500,
+                        "datasetProcessReceivedPackets": 5,
+                        "datasetProcessTransmittedBytes": 0,
+                        "datasetProcessTransmittedPackets": 0,
+                        "totalReceivedBytes": 5100,
+                        "totalReceivedPackets": 51,
+                        "totalTransmittedBytes": 0,
+                        "totalTransmittedPackets": 0
+                    }
+                },
+                {
+                    "run": 3,
+                    "datasetLoadTime": 6.205617176019587,
+                    "datasetProcessTime": 0.7110687439562753,
+                    "totalTime": 6.916685919975862,
+                    "cpuMetrics": {
+                        "datasetLoadCPUUsage": -0.14116914432546565,
+                        "datasetProcessCPUUsage": 0.7049248110431401,
+                        "totalCPUUsage": -0.05418659616965017
+                    },
+                    "netMetrics": {
+                        "datasetLoadReceivedBytes": 5300,
+                        "datasetLoadReceivedPackets": 53,
+                        "datasetLoadTransmittedBytes": 0,
+                        "datasetLoadTransmittedPackets": 0,
+                        "datasetProcessReceivedBytes": 600,
+                        "datasetProcessReceivedPackets": 6,
+                        "datasetProcessTransmittedBytes": 0,
+                        "datasetProcessTransmittedPackets": 0,
+                        "totalReceivedBytes": 5900,
+                        "totalReceivedPackets": 59,
+                        "totalTransmittedBytes": 0,
+                        "totalTransmittedPackets": 0
+                    }
+                },
+                {
+                    "run": 4,
+                    "datasetLoadTime": 6.214381199912168,
+                    "datasetProcessTime": 0.715578067000024,
+                    "totalTime": 6.929959266912192,
+                    "cpuMetrics": {
+                        "datasetLoadCPUUsage": 0.19685521277700158,
+                        "datasetProcessCPUUsage": 0.6017861919039603,
+                        "totalCPUUsage": 0.23866782900630382
+                    },
+                    "netMetrics": {
+                        "datasetLoadReceivedBytes": 5100,
+                        "datasetLoadReceivedPackets": 51,
+                        "datasetLoadTransmittedBytes": 0,
+                        "datasetLoadTransmittedPackets": 0,
+                        "datasetProcessReceivedBytes": 500,
+                        "datasetProcessReceivedPackets": 5,
+                        "datasetProcessTransmittedBytes": 0,
+                        "datasetProcessTransmittedPackets": 0,
+                        "totalReceivedBytes": 5600,
+                        "totalReceivedPackets": 56,
+                        "totalTransmittedBytes": 0,
+                        "totalTransmittedPackets": 0
+                    }
+                },
+                {
+                    "run": 5,
+                    "datasetLoadTime": 6.226936492021196,
+                    "datasetProcessTime": 0.7266749370610341,
+                    "totalTime": 6.95361142908223,
+                    "cpuMetrics": {
+                        "datasetLoadCPUUsage": 0.030211485241398245,
+                        "datasetProcessCPUUsage": -2.7316202869615736,
+                        "totalCPUUsage": -0.2584088884603929
+                    },
+                    "netMetrics": {
+                        "datasetLoadReceivedBytes": 5700,
+                        "datasetLoadReceivedPackets": 57,
+                        "datasetLoadTransmittedBytes": 0,
+                        "datasetLoadTransmittedPackets": 0,
+                        "datasetProcessReceivedBytes": 700,
+                        "datasetProcessReceivedPackets": 7,
+                        "datasetProcessTransmittedBytes": 0,
+                        "datasetProcessTransmittedPackets": 0,
+                        "totalReceivedBytes": 6400,
+                        "totalReceivedPackets": 64,
+                        "totalTransmittedBytes": 0,
+                        "totalTransmittedPackets": 0
+                    }
+                }
+            ],
+            "statistics": {
+                "datasetLoadTimeMean": 6.224483827804216,
+                "datasetLoadTimeStdev": 0.014661207093375043,
+                "datasetProcessTimeMean": 0.7167632611934096,
+                "datasetProcessTimeStdev": 0.012638160708018492,
+                "totalTimeMean": 6.941247088997625,
+                "totalTimeStdev": 0.02238164400294945,
+                "cpuMetrics": {
+                    "datasetLoadCPUUsageMean": 0.0014586185235164778,
+                    "datasetLoadCPUUsageStdev": 0.15188315627827703,
+                    "datasetProcessCPUUsageMean": -0.20378658101343,
+                    "datasetProcessCPUUsageStdev": 1.4327118562562253,
+                    "totalCPUUsageMean": -0.020372612119638867,
+                    "totalCPUUsageStdev": 0.19031760882204327
+                },
+                "netMetrics": {
+                    "datasetLoadReceivedBytesMean": 5080,
+                    "datasetLoadReceivedBytesStdev": 449.44410108488466,
+                    "datasetLoadReceivedPacketsMean": 50.8,
+                    "datasetLoadReceivedPacketsStdev": 4.494441010848846,
+                    "datasetLoadTransmittedBytesMean": 0,
+                    "datasetLoadTransmittedBytesStdev": 0.0,
+                    "datasetLoadTransmittedPacketsMean": 0,
+                    "datasetLoadTransmittedPacketsStdev": 0.0,
+                    "datasetProcessReceivedBytesMean": 580,
+                    "datasetProcessReceivedBytesStdev": 83.66600265340756,
+                    "datasetProcessReceivedPacketsMean": 5.8,
+                    "datasetProcessReceivedPacketsStdev": 0.8366600265340756,
+                    "datasetProcessTransmittedBytesMean": 0,
+                    "datasetProcessTransmittedBytesStdev": 0.0,
+                    "datasetProcessTransmittedPacketsMean": 0,
+                    "datasetProcessTransmittedPacketsStdev": 0.0,
+                    "totalReceivedBytesMean": 5660,
+                    "totalReceivedBytesStdev": 512.8352561983233,
+                    "totalReceivedPacketsMean": 56.6,
+                    "totalReceivedPacketsStdev": 5.128352561983234,
+                    "totalTransmittedBytesMean": 0,
+                    "totalTransmittedBytesStdev": 0.0,
+                    "totalTransmittedPacketsMean": 0,
+                    "totalTransmittedPacketsStdev": 0.0
+                }
+            }
+        }
+    }
+}

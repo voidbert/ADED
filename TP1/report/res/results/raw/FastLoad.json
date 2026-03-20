@@ -1,0 +1,1746 @@
+{
+    "query": "FastLoad",
+    "hostname": "cna0268.deucalion.macc.fccn.pt",
+    "scalability": {
+        "48": {
+            "threads": 48,
+            "contextInitTime": 17.762014194973744,
+            "runs": [
+                {
+                    "run": 1,
+                    "datasetLoadTime": 0.09635917202103883,
+                    "datasetProcessTime": 1.205170992994681,
+                    "totalTime": 1.3015301650157198,
+                    "cpuMetrics": {
+                        "datasetLoadCPUUsage": -0.6464529039405807,
+                        "datasetProcessCPUUsage": 0.27537586105646145,
+                        "totalCPUUsage": 0.20712799486949612
+                    },
+                    "sparkMetrics": {
+                        "jobs": [
+                            {
+                                "jobId": 10,
+                                "name": "collect at /projects/F202500010HPCVLABUMINHO/uminhocp009/ADED/TP1/aded/queries/singlepass.py:95",
+                                "executionTime": 0.633,
+                                "stages": [
+                                    {
+                                        "stageId": 15,
+                                        "skipped": false,
+                                        "executionTime": 0.614,
+                                        "shuffleWriteBytes": 49315,
+                                        "shuffleWriteRecords": 417,
+                                        "shuffleReadBytes": 0,
+                                        "shuffleReadRecords": 0,
+                                        "tasks": [
+                                            {
+                                                "taskId": 138,
+                                                "executionTime": 0.545,
+                                                "shuffleWriteBytes": 2112,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 142,
+                                                "executionTime": 0.378,
+                                                "shuffleWriteBytes": 2180,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 125,
+                                                "executionTime": 0.573,
+                                                "shuffleWriteBytes": 2186,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 137,
+                                                "executionTime": 0.538,
+                                                "shuffleWriteBytes": 2188,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 141,
+                                                "executionTime": 0.481,
+                                                "shuffleWriteBytes": 2115,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 129,
+                                                "executionTime": 0.549,
+                                                "shuffleWriteBytes": 2125,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 148,
+                                                "executionTime": 0.101,
+                                                "shuffleWriteBytes": 931,
+                                                "shuffleWriteRecords": 8,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 144,
+                                                "executionTime": 0.241,
+                                                "shuffleWriteBytes": 2169,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 140,
+                                                "executionTime": 0.439,
+                                                "shuffleWriteBytes": 2115,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 145,
+                                                "executionTime": 0.223,
+                                                "shuffleWriteBytes": 2082,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 127,
+                                                "executionTime": 0.567,
+                                                "shuffleWriteBytes": 2113,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 143,
+                                                "executionTime": 0.373,
+                                                "shuffleWriteBytes": 2107,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 139,
+                                                "executionTime": 0.496,
+                                                "shuffleWriteBytes": 2195,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 146,
+                                                "executionTime": 0.179,
+                                                "shuffleWriteBytes": 2173,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 131,
+                                                "executionTime": 0.542,
+                                                "shuffleWriteBytes": 2085,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 147,
+                                                "executionTime": 0.171,
+                                                "shuffleWriteBytes": 1471,
+                                                "shuffleWriteRecords": 13,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 132,
+                                                "executionTime": 0.566,
+                                                "shuffleWriteBytes": 2087,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 133,
+                                                "executionTime": 0.538,
+                                                "shuffleWriteBytes": 2094,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 134,
+                                                "executionTime": 0.594,
+                                                "shuffleWriteBytes": 2088,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 128,
+                                                "executionTime": 0.572,
+                                                "shuffleWriteBytes": 2187,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 130,
+                                                "executionTime": 0.562,
+                                                "shuffleWriteBytes": 2108,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 135,
+                                                "executionTime": 0.553,
+                                                "shuffleWriteBytes": 2101,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 126,
+                                                "executionTime": 0.568,
+                                                "shuffleWriteBytes": 2116,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 136,
+                                                "executionTime": 0.537,
+                                                "shuffleWriteBytes": 2187,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            }
+                                        ],
+                                        "numTasks": 24,
+                                        "numNonSkippedTasks": 24,
+                                        "workingTimeRatio": 0.3693675352877307
+                                    }
+                                ],
+                                "numStages": 1,
+                                "numNonSkippedStages": 1,
+                                "numTasks": 24,
+                                "numNonSkippedTasks": 24,
+                                "shuffleWriteBytes": 49315,
+                                "shuffleWriteRecords": 417,
+                                "shuffleReadBytes": 0,
+                                "shuffleReadRecords": 0,
+                                "workingTimeRatio": 0.35828067403896785
+                            },
+                            {
+                                "jobId": 11,
+                                "name": "collect at /projects/F202500010HPCVLABUMINHO/uminhocp009/ADED/TP1/aded/queries/singlepass.py:95",
+                                "executionTime": 0.066,
+                                "stages": [
+                                    {
+                                        "stageId": 16,
+                                        "skipped": true,
+                                        "executionTime": 0.0,
+                                        "shuffleWriteBytes": 0,
+                                        "shuffleWriteRecords": 0,
+                                        "shuffleReadBytes": 0,
+                                        "shuffleReadRecords": 0,
+                                        "tasks": [],
+                                        "numTasks": 24,
+                                        "numNonSkippedTasks": 0,
+                                        "workingTimeRatio": 1.0
+                                    },
+                                    {
+                                        "stageId": 17,
+                                        "skipped": false,
+                                        "executionTime": 0.058,
+                                        "shuffleWriteBytes": 0,
+                                        "shuffleWriteRecords": 0,
+                                        "shuffleReadBytes": 49315,
+                                        "shuffleReadRecords": 417,
+                                        "tasks": [
+                                            {
+                                                "taskId": 149,
+                                                "executionTime": 0.045,
+                                                "shuffleWriteBytes": 0,
+                                                "shuffleWriteRecords": 0,
+                                                "shuffleReadBytes": 49315,
+                                                "shuffleReadRecords": 417
+                                            }
+                                        ],
+                                        "numTasks": 1,
+                                        "numNonSkippedTasks": 1,
+                                        "workingTimeRatio": 0.016163793103448273
+                                    }
+                                ],
+                                "numStages": 2,
+                                "numNonSkippedStages": 1,
+                                "numTasks": 25,
+                                "numNonSkippedTasks": 1,
+                                "shuffleWriteBytes": 0,
+                                "shuffleWriteRecords": 0,
+                                "shuffleReadBytes": 49315,
+                                "shuffleReadRecords": 417,
+                                "workingTimeRatio": 0.014204545454545454
+                            }
+                        ],
+                        "numJobs": 2,
+                        "executionTime": 0.759,
+                        "numStages": 3,
+                        "numNonSkippedStages": 2,
+                        "numTasks": 49,
+                        "numNonSkippedTasks": 25,
+                        "shuffleWriteBytes": 49315,
+                        "shuffleWriteRecords": 417,
+                        "shuffleReadBytes": 49315,
+                        "shuffleReadRecords": 417,
+                        "minNonSkippedTasksPerStage": 1,
+                        "maxNonSkippedTasksPerStage": 24,
+                        "workingTimeRatio": 0.300038427755819
+                    },
+                    "diskMetrics": {
+                        "datasetLoadLogicalReadBytes": 9158,
+                        "datasetLoadLogicalWrittenBytes": 838,
+                        "datasetLoadPhysicalReadBytes": 0,
+                        "datasetLoadPhysicalWrittenBytes": 0,
+                        "datasetProcessLogicalReadBytes": 77413368,
+                        "datasetProcessLogicalWrittenBytes": 201347,
+                        "datasetProcessPhysicalReadBytes": 0,
+                        "datasetProcessPhysicalWrittenBytes": 0,
+                        "totalLogicalReadBytes": 77422526,
+                        "totalLogicalWrittenBytes": 202185,
+                        "totalPhysicalReadBytes": 0,
+                        "totalPhysicalWrittenBytes": 0
+                    },
+                    "netMetrics": {
+                        "datasetLoadReceivedBytes": 200,
+                        "datasetLoadReceivedPackets": 2,
+                        "datasetLoadTransmittedBytes": 0,
+                        "datasetLoadTransmittedPackets": 0,
+                        "datasetProcessReceivedBytes": 800,
+                        "datasetProcessReceivedPackets": 8,
+                        "datasetProcessTransmittedBytes": 0,
+                        "datasetProcessTransmittedPackets": 0,
+                        "totalReceivedBytes": 1000,
+                        "totalReceivedPackets": 10,
+                        "totalTransmittedBytes": 0,
+                        "totalTransmittedPackets": 0
+                    }
+                },
+                {
+                    "run": 2,
+                    "datasetLoadTime": 0.09413867595139891,
+                    "datasetProcessTime": 1.1542404510546476,
+                    "totalTime": 1.2483791270060465,
+                    "cpuMetrics": {
+                        "datasetLoadCPUUsage": -0.30318746493215804,
+                        "datasetProcessCPUUsage": 0.25287192076160325,
+                        "totalCPUUsage": 0.21094019250121449
+                    },
+                    "sparkMetrics": {
+                        "jobs": [
+                            {
+                                "jobId": 12,
+                                "name": "collect at /projects/F202500010HPCVLABUMINHO/uminhocp009/ADED/TP1/aded/queries/singlepass.py:95",
+                                "executionTime": 0.616,
+                                "stages": [
+                                    {
+                                        "stageId": 18,
+                                        "skipped": false,
+                                        "executionTime": 0.611,
+                                        "shuffleWriteBytes": 49315,
+                                        "shuffleWriteRecords": 417,
+                                        "shuffleReadBytes": 0,
+                                        "shuffleReadRecords": 0,
+                                        "tasks": [
+                                            {
+                                                "taskId": 170,
+                                                "executionTime": 0.206,
+                                                "shuffleWriteBytes": 2082,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 153,
+                                                "executionTime": 0.54,
+                                                "shuffleWriteBytes": 2187,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 157,
+                                                "executionTime": 0.528,
+                                                "shuffleWriteBytes": 2087,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 152,
+                                                "executionTime": 0.537,
+                                                "shuffleWriteBytes": 2113,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 164,
+                                                "executionTime": 0.509,
+                                                "shuffleWriteBytes": 2195,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 173,
+                                                "executionTime": 0.107,
+                                                "shuffleWriteBytes": 931,
+                                                "shuffleWriteRecords": 8,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 159,
+                                                "executionTime": 0.562,
+                                                "shuffleWriteBytes": 2088,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 172,
+                                                "executionTime": 0.172,
+                                                "shuffleWriteBytes": 1471,
+                                                "shuffleWriteRecords": 13,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 155,
+                                                "executionTime": 0.541,
+                                                "shuffleWriteBytes": 2108,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 167,
+                                                "executionTime": 0.375,
+                                                "shuffleWriteBytes": 2180,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 162,
+                                                "executionTime": 0.538,
+                                                "shuffleWriteBytes": 2188,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 150,
+                                                "executionTime": 0.575,
+                                                "shuffleWriteBytes": 2186,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 154,
+                                                "executionTime": 0.558,
+                                                "shuffleWriteBytes": 2125,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 163,
+                                                "executionTime": 0.525,
+                                                "shuffleWriteBytes": 2112,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 160,
+                                                "executionTime": 0.56,
+                                                "shuffleWriteBytes": 2101,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 165,
+                                                "executionTime": 0.471,
+                                                "shuffleWriteBytes": 2115,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 156,
+                                                "executionTime": 0.571,
+                                                "shuffleWriteBytes": 2085,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 169,
+                                                "executionTime": 0.25,
+                                                "shuffleWriteBytes": 2169,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 166,
+                                                "executionTime": 0.451,
+                                                "shuffleWriteBytes": 2115,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 161,
+                                                "executionTime": 0.528,
+                                                "shuffleWriteBytes": 2187,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 158,
+                                                "executionTime": 0.556,
+                                                "shuffleWriteBytes": 2094,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 171,
+                                                "executionTime": 0.196,
+                                                "shuffleWriteBytes": 2173,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 151,
+                                                "executionTime": 0.583,
+                                                "shuffleWriteBytes": 2116,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 168,
+                                                "executionTime": 0.37,
+                                                "shuffleWriteBytes": 2107,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            }
+                                        ],
+                                        "numTasks": 24,
+                                        "numNonSkippedTasks": 24,
+                                        "workingTimeRatio": 0.3685556464811784
+                                    }
+                                ],
+                                "numStages": 1,
+                                "numNonSkippedStages": 1,
+                                "numTasks": 24,
+                                "numNonSkippedTasks": 24,
+                                "shuffleWriteBytes": 49315,
+                                "shuffleWriteRecords": 417,
+                                "shuffleReadBytes": 0,
+                                "shuffleReadRecords": 0,
+                                "workingTimeRatio": 0.36556412337662336
+                            },
+                            {
+                                "jobId": 13,
+                                "name": "collect at /projects/F202500010HPCVLABUMINHO/uminhocp009/ADED/TP1/aded/queries/singlepass.py:95",
+                                "executionTime": 0.061,
+                                "stages": [
+                                    {
+                                        "stageId": 19,
+                                        "skipped": true,
+                                        "executionTime": 0.0,
+                                        "shuffleWriteBytes": 0,
+                                        "shuffleWriteRecords": 0,
+                                        "shuffleReadBytes": 0,
+                                        "shuffleReadRecords": 0,
+                                        "tasks": [],
+                                        "numTasks": 24,
+                                        "numNonSkippedTasks": 0,
+                                        "workingTimeRatio": 1.0
+                                    },
+                                    {
+                                        "stageId": 20,
+                                        "skipped": false,
+                                        "executionTime": 0.055,
+                                        "shuffleWriteBytes": 0,
+                                        "shuffleWriteRecords": 0,
+                                        "shuffleReadBytes": 49315,
+                                        "shuffleReadRecords": 417,
+                                        "tasks": [
+                                            {
+                                                "taskId": 174,
+                                                "executionTime": 0.043,
+                                                "shuffleWriteBytes": 0,
+                                                "shuffleWriteRecords": 0,
+                                                "shuffleReadBytes": 49315,
+                                                "shuffleReadRecords": 417
+                                            }
+                                        ],
+                                        "numTasks": 1,
+                                        "numNonSkippedTasks": 1,
+                                        "workingTimeRatio": 0.016287878787878785
+                                    }
+                                ],
+                                "numStages": 2,
+                                "numNonSkippedStages": 1,
+                                "numTasks": 25,
+                                "numNonSkippedTasks": 1,
+                                "shuffleWriteBytes": 0,
+                                "shuffleWriteRecords": 0,
+                                "shuffleReadBytes": 49315,
+                                "shuffleReadRecords": 417,
+                                "workingTimeRatio": 0.014685792349726775
+                            }
+                        ],
+                        "numJobs": 2,
+                        "executionTime": 0.735,
+                        "numStages": 3,
+                        "numNonSkippedStages": 2,
+                        "numTasks": 49,
+                        "numNonSkippedTasks": 25,
+                        "shuffleWriteBytes": 49315,
+                        "shuffleWriteRecords": 417,
+                        "shuffleReadBytes": 49315,
+                        "shuffleReadRecords": 417,
+                        "minNonSkippedTasksPerStage": 1,
+                        "maxNonSkippedTasksPerStage": 24,
+                        "workingTimeRatio": 0.3075963718820861
+                    },
+                    "diskMetrics": {
+                        "datasetLoadLogicalReadBytes": 9158,
+                        "datasetLoadLogicalWrittenBytes": 838,
+                        "datasetLoadPhysicalReadBytes": 0,
+                        "datasetLoadPhysicalWrittenBytes": 0,
+                        "datasetProcessLogicalReadBytes": 77409692,
+                        "datasetProcessLogicalWrittenBytes": 201087,
+                        "datasetProcessPhysicalReadBytes": 65536,
+                        "datasetProcessPhysicalWrittenBytes": 0,
+                        "totalLogicalReadBytes": 77418850,
+                        "totalLogicalWrittenBytes": 201925,
+                        "totalPhysicalReadBytes": 65536,
+                        "totalPhysicalWrittenBytes": 0
+                    },
+                    "netMetrics": {
+                        "datasetLoadReceivedBytes": 100,
+                        "datasetLoadReceivedPackets": 1,
+                        "datasetLoadTransmittedBytes": 0,
+                        "datasetLoadTransmittedPackets": 0,
+                        "datasetProcessReceivedBytes": 1300,
+                        "datasetProcessReceivedPackets": 13,
+                        "datasetProcessTransmittedBytes": 0,
+                        "datasetProcessTransmittedPackets": 0,
+                        "totalReceivedBytes": 1400,
+                        "totalReceivedPackets": 14,
+                        "totalTransmittedBytes": 0,
+                        "totalTransmittedPackets": 0
+                    }
+                },
+                {
+                    "run": 3,
+                    "datasetLoadTime": 0.09764369099866599,
+                    "datasetProcessTime": 1.1672600569436327,
+                    "totalTime": 1.2649037479422987,
+                    "cpuMetrics": {
+                        "datasetLoadCPUUsage": -0.7147585879221244,
+                        "datasetProcessCPUUsage": 0.26629312946892797,
+                        "totalCPUUsage": 0.19056127168727774
+                    },
+                    "sparkMetrics": {
+                        "jobs": [
+                            {
+                                "jobId": 14,
+                                "name": "collect at /projects/F202500010HPCVLABUMINHO/uminhocp009/ADED/TP1/aded/queries/singlepass.py:95",
+                                "executionTime": 0.627,
+                                "stages": [
+                                    {
+                                        "stageId": 21,
+                                        "skipped": false,
+                                        "executionTime": 0.608,
+                                        "shuffleWriteBytes": 49315,
+                                        "shuffleWriteRecords": 417,
+                                        "shuffleReadBytes": 0,
+                                        "shuffleReadRecords": 0,
+                                        "tasks": [
+                                            {
+                                                "taskId": 185,
+                                                "executionTime": 0.564,
+                                                "shuffleWriteBytes": 2101,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 189,
+                                                "executionTime": 0.498,
+                                                "shuffleWriteBytes": 2195,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 179,
+                                                "executionTime": 0.552,
+                                                "shuffleWriteBytes": 2125,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 192,
+                                                "executionTime": 0.383,
+                                                "shuffleWriteBytes": 2180,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 197,
+                                                "executionTime": 0.168,
+                                                "shuffleWriteBytes": 1471,
+                                                "shuffleWriteRecords": 13,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 188,
+                                                "executionTime": 0.531,
+                                                "shuffleWriteBytes": 2112,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 193,
+                                                "executionTime": 0.392,
+                                                "shuffleWriteBytes": 2107,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 180,
+                                                "executionTime": 0.54,
+                                                "shuffleWriteBytes": 2108,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 181,
+                                                "executionTime": 0.543,
+                                                "shuffleWriteBytes": 2085,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 187,
+                                                "executionTime": 0.51,
+                                                "shuffleWriteBytes": 2188,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 198,
+                                                "executionTime": 0.109,
+                                                "shuffleWriteBytes": 931,
+                                                "shuffleWriteRecords": 8,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 194,
+                                                "executionTime": 0.235,
+                                                "shuffleWriteBytes": 2169,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 175,
+                                                "executionTime": 0.586,
+                                                "shuffleWriteBytes": 2186,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 186,
+                                                "executionTime": 0.531,
+                                                "shuffleWriteBytes": 2187,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 195,
+                                                "executionTime": 0.229,
+                                                "shuffleWriteBytes": 2082,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 178,
+                                                "executionTime": 0.539,
+                                                "shuffleWriteBytes": 2187,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 184,
+                                                "executionTime": 0.543,
+                                                "shuffleWriteBytes": 2088,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 196,
+                                                "executionTime": 0.152,
+                                                "shuffleWriteBytes": 2173,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 176,
+                                                "executionTime": 0.586,
+                                                "shuffleWriteBytes": 2116,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 191,
+                                                "executionTime": 0.447,
+                                                "shuffleWriteBytes": 2115,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 177,
+                                                "executionTime": 0.59,
+                                                "shuffleWriteBytes": 2113,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 182,
+                                                "executionTime": 0.538,
+                                                "shuffleWriteBytes": 2087,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 190,
+                                                "executionTime": 0.451,
+                                                "shuffleWriteBytes": 2115,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 183,
+                                                "executionTime": 0.591,
+                                                "shuffleWriteBytes": 2094,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            }
+                                        ],
+                                        "numTasks": 24,
+                                        "numNonSkippedTasks": 24,
+                                        "workingTimeRatio": 0.3703399122807018
+                                    }
+                                ],
+                                "numStages": 1,
+                                "numNonSkippedStages": 1,
+                                "numTasks": 24,
+                                "numNonSkippedTasks": 24,
+                                "shuffleWriteBytes": 49315,
+                                "shuffleWriteRecords": 417,
+                                "shuffleReadBytes": 0,
+                                "shuffleReadRecords": 0,
+                                "workingTimeRatio": 0.35911749069643806
+                            },
+                            {
+                                "jobId": 15,
+                                "name": "collect at /projects/F202500010HPCVLABUMINHO/uminhocp009/ADED/TP1/aded/queries/singlepass.py:95",
+                                "executionTime": 0.06,
+                                "stages": [
+                                    {
+                                        "stageId": 22,
+                                        "skipped": true,
+                                        "executionTime": 0.0,
+                                        "shuffleWriteBytes": 0,
+                                        "shuffleWriteRecords": 0,
+                                        "shuffleReadBytes": 0,
+                                        "shuffleReadRecords": 0,
+                                        "tasks": [],
+                                        "numTasks": 24,
+                                        "numNonSkippedTasks": 0,
+                                        "workingTimeRatio": 1.0
+                                    },
+                                    {
+                                        "stageId": 23,
+                                        "skipped": false,
+                                        "executionTime": 0.054,
+                                        "shuffleWriteBytes": 0,
+                                        "shuffleWriteRecords": 0,
+                                        "shuffleReadBytes": 49315,
+                                        "shuffleReadRecords": 417,
+                                        "tasks": [
+                                            {
+                                                "taskId": 199,
+                                                "executionTime": 0.042,
+                                                "shuffleWriteBytes": 0,
+                                                "shuffleWriteRecords": 0,
+                                                "shuffleReadBytes": 49315,
+                                                "shuffleReadRecords": 417
+                                            }
+                                        ],
+                                        "numTasks": 1,
+                                        "numNonSkippedTasks": 1,
+                                        "workingTimeRatio": 0.016203703703703703
+                                    }
+                                ],
+                                "numStages": 2,
+                                "numNonSkippedStages": 1,
+                                "numTasks": 25,
+                                "numNonSkippedTasks": 1,
+                                "shuffleWriteBytes": 0,
+                                "shuffleWriteRecords": 0,
+                                "shuffleReadBytes": 49315,
+                                "shuffleReadRecords": 417,
+                                "workingTimeRatio": 0.014583333333333335
+                            }
+                        ],
+                        "numJobs": 2,
+                        "executionTime": 0.744,
+                        "numStages": 3,
+                        "numNonSkippedStages": 2,
+                        "numTasks": 49,
+                        "numNonSkippedTasks": 25,
+                        "shuffleWriteBytes": 49315,
+                        "shuffleWriteRecords": 417,
+                        "shuffleReadBytes": 49315,
+                        "shuffleReadRecords": 417,
+                        "minNonSkippedTasksPerStage": 1,
+                        "maxNonSkippedTasksPerStage": 24,
+                        "workingTimeRatio": 0.3038194444444444
+                    },
+                    "diskMetrics": {
+                        "datasetLoadLogicalReadBytes": 9158,
+                        "datasetLoadLogicalWrittenBytes": 838,
+                        "datasetLoadPhysicalReadBytes": 0,
+                        "datasetLoadPhysicalWrittenBytes": 0,
+                        "datasetProcessLogicalReadBytes": 77412830,
+                        "datasetProcessLogicalWrittenBytes": 201511,
+                        "datasetProcessPhysicalReadBytes": 65536,
+                        "datasetProcessPhysicalWrittenBytes": 0,
+                        "totalLogicalReadBytes": 77421988,
+                        "totalLogicalWrittenBytes": 202349,
+                        "totalPhysicalReadBytes": 65536,
+                        "totalPhysicalWrittenBytes": 0
+                    },
+                    "netMetrics": {
+                        "datasetLoadReceivedBytes": 0,
+                        "datasetLoadReceivedPackets": 0,
+                        "datasetLoadTransmittedBytes": 0,
+                        "datasetLoadTransmittedPackets": 0,
+                        "datasetProcessReceivedBytes": 1100,
+                        "datasetProcessReceivedPackets": 11,
+                        "datasetProcessTransmittedBytes": 0,
+                        "datasetProcessTransmittedPackets": 0,
+                        "totalReceivedBytes": 1100,
+                        "totalReceivedPackets": 11,
+                        "totalTransmittedBytes": 0,
+                        "totalTransmittedPackets": 0
+                    }
+                },
+                {
+                    "run": 4,
+                    "datasetLoadTime": 0.09284476703032851,
+                    "datasetProcessTime": 1.1363720910158008,
+                    "totalTime": 1.2292168580461293,
+                    "cpuMetrics": {
+                        "datasetLoadCPUUsage": -0.3859488759524219,
+                        "datasetProcessCPUUsage": 0.2506148020932506,
+                        "totalCPUUsage": 0.20253410258017773
+                    },
+                    "sparkMetrics": {
+                        "jobs": [
+                            {
+                                "jobId": 16,
+                                "name": "collect at /projects/F202500010HPCVLABUMINHO/uminhocp009/ADED/TP1/aded/queries/singlepass.py:95",
+                                "executionTime": 0.619,
+                                "stages": [
+                                    {
+                                        "stageId": 24,
+                                        "skipped": false,
+                                        "executionTime": 0.615,
+                                        "shuffleWriteBytes": 49315,
+                                        "shuffleWriteRecords": 417,
+                                        "shuffleReadBytes": 0,
+                                        "shuffleReadRecords": 0,
+                                        "tasks": [
+                                            {
+                                                "taskId": 212,
+                                                "executionTime": 0.528,
+                                                "shuffleWriteBytes": 2188,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 205,
+                                                "executionTime": 0.537,
+                                                "shuffleWriteBytes": 2108,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 204,
+                                                "executionTime": 0.535,
+                                                "shuffleWriteBytes": 2125,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 213,
+                                                "executionTime": 0.51,
+                                                "shuffleWriteBytes": 2112,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 223,
+                                                "executionTime": 0.105,
+                                                "shuffleWriteBytes": 931,
+                                                "shuffleWriteRecords": 8,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 209,
+                                                "executionTime": 0.58,
+                                                "shuffleWriteBytes": 2088,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 210,
+                                                "executionTime": 0.573,
+                                                "shuffleWriteBytes": 2101,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 200,
+                                                "executionTime": 0.583,
+                                                "shuffleWriteBytes": 2186,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 217,
+                                                "executionTime": 0.394,
+                                                "shuffleWriteBytes": 2180,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 202,
+                                                "executionTime": 0.566,
+                                                "shuffleWriteBytes": 2113,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 216,
+                                                "executionTime": 0.467,
+                                                "shuffleWriteBytes": 2115,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 211,
+                                                "executionTime": 0.582,
+                                                "shuffleWriteBytes": 2187,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 221,
+                                                "executionTime": 0.186,
+                                                "shuffleWriteBytes": 2173,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 206,
+                                                "executionTime": 0.561,
+                                                "shuffleWriteBytes": 2085,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 201,
+                                                "executionTime": 0.581,
+                                                "shuffleWriteBytes": 2116,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 220,
+                                                "executionTime": 0.209,
+                                                "shuffleWriteBytes": 2082,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 219,
+                                                "executionTime": 0.246,
+                                                "shuffleWriteBytes": 2169,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 208,
+                                                "executionTime": 0.561,
+                                                "shuffleWriteBytes": 2094,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 203,
+                                                "executionTime": 0.558,
+                                                "shuffleWriteBytes": 2187,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 218,
+                                                "executionTime": 0.379,
+                                                "shuffleWriteBytes": 2107,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 207,
+                                                "executionTime": 0.513,
+                                                "shuffleWriteBytes": 2087,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 214,
+                                                "executionTime": 0.471,
+                                                "shuffleWriteBytes": 2195,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 215,
+                                                "executionTime": 0.44,
+                                                "shuffleWriteBytes": 2115,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 222,
+                                                "executionTime": 0.17,
+                                                "shuffleWriteBytes": 1471,
+                                                "shuffleWriteRecords": 13,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            }
+                                        ],
+                                        "numTasks": 24,
+                                        "numNonSkippedTasks": 24,
+                                        "workingTimeRatio": 0.3670392953929539
+                                    }
+                                ],
+                                "numStages": 1,
+                                "numNonSkippedStages": 1,
+                                "numTasks": 24,
+                                "numNonSkippedTasks": 24,
+                                "shuffleWriteBytes": 49315,
+                                "shuffleWriteRecords": 417,
+                                "shuffleReadBytes": 0,
+                                "shuffleReadRecords": 0,
+                                "workingTimeRatio": 0.3646674744211093
+                            },
+                            {
+                                "jobId": 17,
+                                "name": "collect at /projects/F202500010HPCVLABUMINHO/uminhocp009/ADED/TP1/aded/queries/singlepass.py:95",
+                                "executionTime": 0.059,
+                                "stages": [
+                                    {
+                                        "stageId": 25,
+                                        "skipped": true,
+                                        "executionTime": 0.0,
+                                        "shuffleWriteBytes": 0,
+                                        "shuffleWriteRecords": 0,
+                                        "shuffleReadBytes": 0,
+                                        "shuffleReadRecords": 0,
+                                        "tasks": [],
+                                        "numTasks": 24,
+                                        "numNonSkippedTasks": 0,
+                                        "workingTimeRatio": 1.0
+                                    },
+                                    {
+                                        "stageId": 26,
+                                        "skipped": false,
+                                        "executionTime": 0.053,
+                                        "shuffleWriteBytes": 0,
+                                        "shuffleWriteRecords": 0,
+                                        "shuffleReadBytes": 49315,
+                                        "shuffleReadRecords": 417,
+                                        "tasks": [
+                                            {
+                                                "taskId": 224,
+                                                "executionTime": 0.041,
+                                                "shuffleWriteBytes": 0,
+                                                "shuffleWriteRecords": 0,
+                                                "shuffleReadBytes": 49315,
+                                                "shuffleReadRecords": 417
+                                            }
+                                        ],
+                                        "numTasks": 1,
+                                        "numNonSkippedTasks": 1,
+                                        "workingTimeRatio": 0.01611635220125786
+                                    }
+                                ],
+                                "numStages": 2,
+                                "numNonSkippedStages": 1,
+                                "numTasks": 25,
+                                "numNonSkippedTasks": 1,
+                                "shuffleWriteBytes": 0,
+                                "shuffleWriteRecords": 0,
+                                "shuffleReadBytes": 49315,
+                                "shuffleReadRecords": 417,
+                                "workingTimeRatio": 0.014477401129943505
+                            }
+                        ],
+                        "numJobs": 2,
+                        "executionTime": 0.733,
+                        "numStages": 3,
+                        "numNonSkippedStages": 2,
+                        "numTasks": 49,
+                        "numNonSkippedTasks": 25,
+                        "shuffleWriteBytes": 49315,
+                        "shuffleWriteRecords": 417,
+                        "shuffleReadBytes": 49315,
+                        "shuffleReadRecords": 417,
+                        "minNonSkippedTasksPerStage": 1,
+                        "maxNonSkippedTasksPerStage": 24,
+                        "workingTimeRatio": 0.30911778080945884
+                    },
+                    "diskMetrics": {
+                        "datasetLoadLogicalReadBytes": 9158,
+                        "datasetLoadLogicalWrittenBytes": 838,
+                        "datasetLoadPhysicalReadBytes": 0,
+                        "datasetLoadPhysicalWrittenBytes": 0,
+                        "datasetProcessLogicalReadBytes": 77410113,
+                        "datasetProcessLogicalWrittenBytes": 201100,
+                        "datasetProcessPhysicalReadBytes": 65536,
+                        "datasetProcessPhysicalWrittenBytes": 0,
+                        "totalLogicalReadBytes": 77419271,
+                        "totalLogicalWrittenBytes": 201938,
+                        "totalPhysicalReadBytes": 65536,
+                        "totalPhysicalWrittenBytes": 0
+                    },
+                    "netMetrics": {
+                        "datasetLoadReceivedBytes": 0,
+                        "datasetLoadReceivedPackets": 0,
+                        "datasetLoadTransmittedBytes": 0,
+                        "datasetLoadTransmittedPackets": 0,
+                        "datasetProcessReceivedBytes": 1300,
+                        "datasetProcessReceivedPackets": 13,
+                        "datasetProcessTransmittedBytes": 0,
+                        "datasetProcessTransmittedPackets": 0,
+                        "totalReceivedBytes": 1300,
+                        "totalReceivedPackets": 13,
+                        "totalTransmittedBytes": 0,
+                        "totalTransmittedPackets": 0
+                    }
+                },
+                {
+                    "run": 5,
+                    "datasetLoadTime": 0.08853724494110793,
+                    "datasetProcessTime": 1.167135036084801,
+                    "totalTime": 1.2556722810259089,
+                    "cpuMetrics": {
+                        "datasetLoadCPUUsage": -0.5670871444830353,
+                        "datasetProcessCPUUsage": 0.26507215580286847,
+                        "totalCPUUsage": 0.2063967411164517
+                    },
+                    "sparkMetrics": {
+                        "jobs": [
+                            {
+                                "jobId": 18,
+                                "name": "collect at /projects/F202500010HPCVLABUMINHO/uminhocp009/ADED/TP1/aded/queries/singlepass.py:95",
+                                "executionTime": 0.67,
+                                "stages": [
+                                    {
+                                        "stageId": 27,
+                                        "skipped": false,
+                                        "executionTime": 0.665,
+                                        "shuffleWriteBytes": 49315,
+                                        "shuffleWriteRecords": 417,
+                                        "shuffleReadBytes": 0,
+                                        "shuffleReadRecords": 0,
+                                        "tasks": [
+                                            {
+                                                "taskId": 234,
+                                                "executionTime": 0.518,
+                                                "shuffleWriteBytes": 2088,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 247,
+                                                "executionTime": 0.16,
+                                                "shuffleWriteBytes": 1471,
+                                                "shuffleWriteRecords": 13,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 228,
+                                                "executionTime": 0.604,
+                                                "shuffleWriteBytes": 2187,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 238,
+                                                "executionTime": 0.509,
+                                                "shuffleWriteBytes": 2112,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 243,
+                                                "executionTime": 0.375,
+                                                "shuffleWriteBytes": 2107,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 229,
+                                                "executionTime": 0.61,
+                                                "shuffleWriteBytes": 2125,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 225,
+                                                "executionTime": 0.639,
+                                                "shuffleWriteBytes": 2186,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 236,
+                                                "executionTime": 0.557,
+                                                "shuffleWriteBytes": 2187,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 240,
+                                                "executionTime": 0.443,
+                                                "shuffleWriteBytes": 2115,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 231,
+                                                "executionTime": 0.569,
+                                                "shuffleWriteBytes": 2085,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 233,
+                                                "executionTime": 0.56,
+                                                "shuffleWriteBytes": 2094,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 248,
+                                                "executionTime": 0.108,
+                                                "shuffleWriteBytes": 931,
+                                                "shuffleWriteRecords": 8,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 237,
+                                                "executionTime": 0.554,
+                                                "shuffleWriteBytes": 2188,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 244,
+                                                "executionTime": 0.237,
+                                                "shuffleWriteBytes": 2169,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 230,
+                                                "executionTime": 0.521,
+                                                "shuffleWriteBytes": 2108,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 245,
+                                                "executionTime": 0.214,
+                                                "shuffleWriteBytes": 2082,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 226,
+                                                "executionTime": 0.574,
+                                                "shuffleWriteBytes": 2116,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 241,
+                                                "executionTime": 0.458,
+                                                "shuffleWriteBytes": 2115,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 235,
+                                                "executionTime": 0.555,
+                                                "shuffleWriteBytes": 2101,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 246,
+                                                "executionTime": 0.177,
+                                                "shuffleWriteBytes": 2173,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 239,
+                                                "executionTime": 0.465,
+                                                "shuffleWriteBytes": 2195,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 242,
+                                                "executionTime": 0.353,
+                                                "shuffleWriteBytes": 2180,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 227,
+                                                "executionTime": 0.611,
+                                                "shuffleWriteBytes": 2113,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            },
+                                            {
+                                                "taskId": 232,
+                                                "executionTime": 0.581,
+                                                "shuffleWriteBytes": 2087,
+                                                "shuffleWriteRecords": 18,
+                                                "shuffleReadBytes": 0,
+                                                "shuffleReadRecords": 0
+                                            }
+                                        ],
+                                        "numTasks": 24,
+                                        "numNonSkippedTasks": 24,
+                                        "workingTimeRatio": 0.34310776942355886
+                                    }
+                                ],
+                                "numStages": 1,
+                                "numNonSkippedStages": 1,
+                                "numTasks": 24,
+                                "numNonSkippedTasks": 24,
+                                "shuffleWriteBytes": 49315,
+                                "shuffleWriteRecords": 417,
+                                "shuffleReadBytes": 0,
+                                "shuffleReadRecords": 0,
+                                "workingTimeRatio": 0.340547263681592
+                            },
+                            {
+                                "jobId": 19,
+                                "name": "collect at /projects/F202500010HPCVLABUMINHO/uminhocp009/ADED/TP1/aded/queries/singlepass.py:95",
+                                "executionTime": 0.057,
+                                "stages": [
+                                    {
+                                        "stageId": 28,
+                                        "skipped": true,
+                                        "executionTime": 0.0,
+                                        "shuffleWriteBytes": 0,
+                                        "shuffleWriteRecords": 0,
+                                        "shuffleReadBytes": 0,
+                                        "shuffleReadRecords": 0,
+                                        "tasks": [],
+                                        "numTasks": 24,
+                                        "numNonSkippedTasks": 0,
+                                        "workingTimeRatio": 1.0
+                                    },
+                                    {
+                                        "stageId": 29,
+                                        "skipped": false,
+                                        "executionTime": 0.051,
+                                        "shuffleWriteBytes": 0,
+                                        "shuffleWriteRecords": 0,
+                                        "shuffleReadBytes": 49315,
+                                        "shuffleReadRecords": 417,
+                                        "tasks": [
+                                            {
+                                                "taskId": 249,
+                                                "executionTime": 0.039,
+                                                "shuffleWriteBytes": 0,
+                                                "shuffleWriteRecords": 0,
+                                                "shuffleReadBytes": 49315,
+                                                "shuffleReadRecords": 417
+                                            }
+                                        ],
+                                        "numTasks": 1,
+                                        "numNonSkippedTasks": 1,
+                                        "workingTimeRatio": 0.015931372549019607
+                                    }
+                                ],
+                                "numStages": 2,
+                                "numNonSkippedStages": 1,
+                                "numTasks": 25,
+                                "numNonSkippedTasks": 1,
+                                "shuffleWriteBytes": 0,
+                                "shuffleWriteRecords": 0,
+                                "shuffleReadBytes": 49315,
+                                "shuffleReadRecords": 417,
+                                "workingTimeRatio": 0.01425438596491228
+                            }
+                        ],
+                        "numJobs": 2,
+                        "executionTime": 0.781,
+                        "numStages": 3,
+                        "numNonSkippedStages": 2,
+                        "numTasks": 49,
+                        "numNonSkippedTasks": 25,
+                        "shuffleWriteBytes": 49315,
+                        "shuffleWriteRecords": 417,
+                        "shuffleReadBytes": 49315,
+                        "shuffleReadRecords": 417,
+                        "minNonSkippedTasksPerStage": 1,
+                        "maxNonSkippedTasksPerStage": 24,
+                        "workingTimeRatio": 0.2931871532223645
+                    },
+                    "diskMetrics": {
+                        "datasetLoadLogicalReadBytes": 9178,
+                        "datasetLoadLogicalWrittenBytes": 858,
+                        "datasetLoadPhysicalReadBytes": 0,
+                        "datasetLoadPhysicalWrittenBytes": 0,
+                        "datasetProcessLogicalReadBytes": 77411380,
+                        "datasetProcessLogicalWrittenBytes": 201600,
+                        "datasetProcessPhysicalReadBytes": 0,
+                        "datasetProcessPhysicalWrittenBytes": 0,
+                        "totalLogicalReadBytes": 77420558,
+                        "totalLogicalWrittenBytes": 202458,
+                        "totalPhysicalReadBytes": 0,
+                        "totalPhysicalWrittenBytes": 0
+                    },
+                    "netMetrics": {
+                        "datasetLoadReceivedBytes": 0,
+                        "datasetLoadReceivedPackets": 0,
+                        "datasetLoadTransmittedBytes": 0,
+                        "datasetLoadTransmittedPackets": 0,
+                        "datasetProcessReceivedBytes": 1100,
+                        "datasetProcessReceivedPackets": 11,
+                        "datasetProcessTransmittedBytes": 0,
+                        "datasetProcessTransmittedPackets": 0,
+                        "totalReceivedBytes": 1100,
+                        "totalReceivedPackets": 11,
+                        "totalTransmittedBytes": 0,
+                        "totalTransmittedPackets": 0
+                    }
+                }
+            ],
+            "statistics": {
+                "datasetLoadTimeMean": 0.09390471018850803,
+                "datasetLoadTimeStdev": 0.0035352603526792913,
+                "datasetProcessTimeMean": 1.1660357256187126,
+                "datasetProcessTimeStdev": 0.02526527430674023,
+                "totalTimeMean": 1.2599404358072206,
+                "totalTimeStdev": 0.026693441515949514,
+                "cpuMetrics": {
+                    "datasetLoadCPUUsageMean": -0.5234869954460641,
+                    "datasetLoadCPUUsageStdev": 0.17396481482957327,
+                    "datasetProcessCPUUsageMean": 0.26204557383662236,
+                    "datasetProcessCPUUsageStdev": 0.010243497181153714,
+                    "totalCPUUsageMean": 0.20351206055092355,
+                    "totalCPUUsageStdev": 0.007830275238067582
+                },
+                "sparkMetrics": {
+                    "executionTimeMean": 0.7504,
+                    "executionTimeStdev": 0.01994492416631361,
+                    "shuffleReadBytesMean": 49315,
+                    "shuffleReadBytesStdev": 0.0,
+                    "shuffleReadRecordsMean": 417,
+                    "shuffleReadRecordsStdev": 0.0,
+                    "shuffleWriteBytesMean": 49315,
+                    "shuffleWriteBytesStdev": 0.0,
+                    "shuffleWriteRecordsMean": 417,
+                    "shuffleWriteRecordsStdev": 0.0,
+                    "workingTimeRatioMean": 0.3027518356228346,
+                    "workingTimeRatioStdev": 0.006402739842382531,
+                    "numJobs": 2,
+                    "numStages": 3,
+                    "numNonSkippedStages": 2,
+                    "numTasks": 49,
+                    "numNonSkippedTasks": 25,
+                    "minNonSkippedTasksPerStage": 1,
+                    "maxNonSkippedTasksPerStage": 24
+                },
+                "diskMetrics": {
+                    "datasetLoadLogicalReadBytesMean": 9162,
+                    "datasetLoadLogicalReadBytesStdev": 8.94427190999916,
+                    "datasetLoadLogicalWrittenBytesMean": 842,
+                    "datasetLoadLogicalWrittenBytesStdev": 8.94427190999916,
+                    "datasetLoadPhysicalReadBytesMean": 0,
+                    "datasetLoadPhysicalReadBytesStdev": 0.0,
+                    "datasetLoadPhysicalWrittenBytesMean": 0,
+                    "datasetLoadPhysicalWrittenBytesStdev": 0.0,
+                    "datasetProcessLogicalReadBytesMean": 77411476.6,
+                    "datasetProcessLogicalReadBytesStdev": 1617.2986118834085,
+                    "datasetProcessLogicalWrittenBytesMean": 201329,
+                    "datasetProcessLogicalWrittenBytesStdev": 233.3955869334294,
+                    "datasetProcessPhysicalReadBytesMean": 39321.6,
+                    "datasetProcessPhysicalReadBytesStdev": 35895.545528658564,
+                    "datasetProcessPhysicalWrittenBytesMean": 0,
+                    "datasetProcessPhysicalWrittenBytesStdev": 0.0,
+                    "totalLogicalReadBytesMean": 77420638.6,
+                    "totalLogicalReadBytesStdev": 1617.0246751364061,
+                    "totalLogicalWrittenBytesMean": 202171,
+                    "totalLogicalWrittenBytesStdev": 239.29793145783773,
+                    "totalPhysicalReadBytesMean": 39321.6,
+                    "totalPhysicalReadBytesStdev": 35895.545528658564,
+                    "totalPhysicalWrittenBytesMean": 0,
+                    "totalPhysicalWrittenBytesStdev": 0.0
+                },
+                "netMetrics": {
+                    "datasetLoadReceivedBytesMean": 60,
+                    "datasetLoadReceivedBytesStdev": 89.44271909999159,
+                    "datasetLoadReceivedPacketsMean": 0.6,
+                    "datasetLoadReceivedPacketsStdev": 0.8944271909999159,
+                    "datasetLoadTransmittedBytesMean": 0,
+                    "datasetLoadTransmittedBytesStdev": 0.0,
+                    "datasetLoadTransmittedPacketsMean": 0,
+                    "datasetLoadTransmittedPacketsStdev": 0.0,
+                    "datasetProcessReceivedBytesMean": 1120,
+                    "datasetProcessReceivedBytesStdev": 204.93901531919198,
+                    "datasetProcessReceivedPacketsMean": 11.2,
+                    "datasetProcessReceivedPacketsStdev": 2.04939015319192,
+                    "datasetProcessTransmittedBytesMean": 0,
+                    "datasetProcessTransmittedBytesStdev": 0.0,
+                    "datasetProcessTransmittedPacketsMean": 0,
+                    "datasetProcessTransmittedPacketsStdev": 0.0,
+                    "totalReceivedBytesMean": 1180,
+                    "totalReceivedBytesStdev": 164.31676725154983,
+                    "totalReceivedPacketsMean": 11.8,
+                    "totalReceivedPacketsStdev": 1.6431676725154984,
+                    "totalTransmittedBytesMean": 0,
+                    "totalTransmittedBytesStdev": 0.0,
+                    "totalTransmittedPacketsMean": 0,
+                    "totalTransmittedPacketsStdev": 0.0
+                }
+            }
+        }
+    }
+}

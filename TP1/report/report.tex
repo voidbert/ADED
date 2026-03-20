@@ -1,21 +1,28 @@
 \documentclass[11pt, a4paper]{article}
 
-% PACOTES -----------------------------------------------------------------------------------------
+% PACOTES ------------------------------------------------------------------------------------------
 
 \usepackage{array}
 \usepackage[portuguese]{babel}
+\usepackage{chngpage}
 \usepackage{float}
 \usepackage[a4paper, margin = 2cm]{geometry}
 \usepackage{graphicx}
 \usepackage[hidelinks]{hyperref}
+\usepackage{listings}
+\usepackage{pgfplots}
 \usepackage{setspace}
+\usepackage[dvipsnames]{xcolor}
 
-% INFORMAÇÃO DA CAPA ------------------------------------------------------------------------------
+\usetikzlibrary{patterns}
+
+% INFORMAÇÃO DA CAPA -------------------------------------------------------------------------------
 
 \title{
     \vspace*{\fill}
     \textbf{
-        Otimização de uma interrogação Apache Spark SQL
+        Otimização de Interrogações Apache Spark SQL para Geração Automática de Relatórios do
+        Deucalion
     } \\
     \vspace{\baselineskip}
     \Large \textbf{Análise de Dados de Elevado Desempenho} \\
@@ -36,8 +43,9 @@
     \vspace*{\fill}
 }
 
-% ESPAÇAMENTO -------------------------------------------------------------------------------------
+% ESTILO -------------------------------------------------------------------------------------------
 
+% Espaçamento
 \onehalfspacing
 \setlength{\parskip}{\baselineskip}
 \setlength{\parindent}{0pt}
@@ -45,41 +53,1020 @@
 \setlength{\belowcaptionskip}{-1.5\baselineskip}
 \renewcommand{\arraystretch}{1.5}
 
-% CONTEÚDO DO DOCUMENTO ---------------------------------------------------------------------------
+% Estilo de listagens de código
+\lstdefinestyle{codestyle}{
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,
+    breaklines=false,
+    keepspaces=true,
+    showspaces=false,
+    showstringspaces=false,
+}
+\lstset{style=codestyle}
+
+% COMPILAÇÃO DE PLANOS DE EXECUÇÃO -----------------------------------------------------------------
+
+\immediate\write18{dot -Tpdf res/plans/original/1.dot         > res/plans/original/1.pdf}
+\immediate\write18{dot -Tpdf res/plans/original/2.dot         > res/plans/original/2.pdf}
+\immediate\write18{dot -Tpdf res/plans/original/3.dot         > res/plans/original/3.pdf}
+\immediate\write18{dot -Tpdf res/plans/original/4.dot         > res/plans/original/4.pdf}
+\immediate\write18{dot -Tpdf res/plans/original/4_month.dot   > res/plans/original/4_month.pdf}
+\immediate\write18{dot -Tpdf res/plans/original/5.dot         > res/plans/original/5.pdf}
+\immediate\write18{dot -Tpdf res/plans/multipass/1.dot        > res/plans/multipass/1.pdf}
+\immediate\write18{dot -Tpdf res/plans/multipass/1_month.dot  > res/plans/multipass/1_month.pdf}
+\immediate\write18{dot -Tpdf res/plans/singlepass/1.dot       > res/plans/singlepass/1.pdf}
+\immediate\write18{dot -Tpdf res/plans/fastload/1.dot         > res/plans/fastload/1.pdf}
+
+% CONTEÚDO DO DOCUMENTO ----------------------------------------------------------------------------
 
 \begin{document}
 
 % Capa
 
-\thispagestyle{empty}
 \begin{center}
     \includegraphics[width = 0.25\textwidth]{res/SchoolOfEngineering.pdf}
 \end{center}
 
 {\let\newpage\relax\maketitle}
 \maketitle
+\thispagestyle{empty}
 \pagebreak
 
 % Corpo do documento
 
 \begin{abstract} % ---------------------------------------------------------------------------------
+    A equipa do Deucalion automatizou a geração de relatórios estatísticos utilizando Apache Spark
+    SQL \cite{apache-spark}. Porém, devido à falta de otimização inicial, os tempos de execução
+    tornaram-se excessivamente elevados, justificando a necessidade de melhorar o desempenho do
+    código.
 
+    Através de uma metodologia iterativa, baseada na análise de planos de execução de interrogações
+    e na recolha de métricas de desempenho, foram desenvolvidas e avaliadas quatro implementações
+    otimizadas em Apache Spark. Além disso, foram realizados portes para PostgreSQL e DuckDB, com o
+    objetivo de identificar a solução mais eficiente para os \emph{datasets} de \emph{jobs} de
+    pequena dimensão (~73 MiB).
+
+    Os resultados demonstraram que a implementação \texttt{FastLoad} atingiu um \emph{speedup} de
+    $28\times$ em relação à versão original, porém sacrificando alguma flexibilidade no esquema dos
+    ficheiros do \emph{dataset}. A solução em DuckDB superou todas as alternativas, alcançando um
+    \emph{speedup} de $40.5\times$.
 \end{abstract}
 
 \section{Introdução} % -----------------------------------------------------------------------------
 
+O Deucalion é um supercomputador cofinanciado pela Fundação para a Ciência e Tecnologia (FCT) e pelo
+projeto EuroHPC. Apresenta uma arquitetura heterogénea, integrando nós com processadores Arm
+(Fujitsu A64FX) e x86 (AMD EPYC), bem como nós com aceleradores gráficos (GPUs NVIDIA A100)
+\cite{deucalion}. A equipa do Deucalion produz relatórios periódicos com estatísticas mensais,
+trimestrais e anuais sobre o número de horas utilizadas e o número de \emph{jobs} bem e
+mal-sucedidos, discriminados por partição (Arm, x86 e GPU), bem como quantos destes têm origem em
+projetos EuroHPC.
+
+A equipa do Deucalion automatizou a geração destes relatórios utilizando o Apache Spark
+\cite{apache-spark}, uma \emph{framework} para análise de dados em larga escala. O gerador de
+relatórios consiste num \emph{script} Python que executa várias interrogações SQL sobre o
+\emph{dataset} de \emph{jobs} do Deucalion, seguidas da exportação dos resultados em formato LaTeX.
+No entanto, a implementação das interrogações foi feita com pouca atenção ao seu desempenho,
+resultando em código pouco eficiente e a um aumento significativo no tempo de geração de relatórios
+à medida que o número de \emph{jobs} anuais no Deucalion aumenta.
+
+Assim, procurou-se otimizar as interrogações Apache Spark SQL para diminuir o tempo da geração de
+relatórios. Além disso, dada a pequena dimensão do \emph{dataset} de \emph{jobs} ($\sim$73 MiB para
+2025) e o facto do Apache Spark ser mais adequado para o processamento de grandes volumes de dados,
+investigaram-se também outras ferramentas para a análise dos dados, como PostgreSQL
+\cite{postgresql} e DuckDB \cite{duckdb}.
+
 \section{Metodologia} % ----------------------------------------------------------------------------
 
-\section{Otimizações desenvolvidas} % --------------------------------------------------------------
+A otimização da geração de relatórios seguiu um processo iterativo: partiu-se de uma implementação
+inicial, recolheram-se e analisaram-se métricas do seu desempenho, identificaram-se ineficiências, e
+implementaram-se otimizações para as eliminar, reduzindo-se progressivamente os tempos de execução.
+A versão final, desenvolvida em Apache Spark, foi depois portada para PostgreSQL e DuckDB,
+permitindo uma comparação direta do desempenho das três plataformas.
 
-\section{Resultados obtidos} % ---------------------------------------------------------------------
+Para garantir a correção das várias implementações, desenvolveu-se um \emph{script} que compara,
+para todos os meses de 2025, os relatórios gerados por cada implementação com os da implementação
+original. Os resultados revelaram-se equivalentes, à exceção de pequenos erros de aritmética de
+vírgula flutuante.
+
+A estratégia de otimização iterativa adotada exige a definição de uma metodologia para medições que
+permita comparar o desempenho das diferentes implementações. Em primeiro lugar, estabeleceu-se que
+todas as medições de desempenho se baseariam na geração do relatório do mês de dezembro de 2025,
+dado que tal exige a leitura de todos os ficheiros de \emph{jobs} mensais nos quais o \emph{dataset}
+se divide. De seguida, devido ao tamanho reduzido do \emph{dataset} de \emph{jobs}, descartaram-se
+análises multi-nó, realizando-se todos os testes num único nó Arm do Deucalion (partição
+\texttt{normal-arm}), equipado com um processador Fujitsu A64FX de 48 núcleos ARMv8.2-A a 2.0 GHz.
+
+As medições para comparação entre implementações utilizaram 48 \emph{threads}, valor que coincide
+com o número de núcleos do processador, maximizando assim o grau de paralelismo disponível. Por
+exemplo, o Apache Spark foi executado no modo local, onde um único processo integra o \emph{driver}
+e um \emph{executor} capaz de criar até 48 \emph{threads} para processamento de tarefas. Foram ainda
+realizadas análises de escalabilidade forte para a melhor implementação em Apache Spark e para a
+solução em DuckDB, com o objetivo de avaliar a sua capacidade de explorar plenamente o paralelismo
+do sistema.
+
+Para analisar o desempenho de cada implementação, além da análise dos planos de execução das
+diferentes interrogações, instrumentou-se cada implementação, e recolheram-se as
+métricas apresentadas na Tabela \ref{instrumentation-metrics}:
+
+\begin{table}[H]
+    \centering
+    \setlength{\leftmargini}{3ex}
+    \begin{tabular}{@{}|m{0.46\textwidth}|m{0.46\textwidth}|}
+        \hline
+        \multicolumn{1}{|c|}{\textbf{Métricas Gerais}} &
+        \multicolumn{1}{c|}{\textbf{Métricas do Apache Spark}} \\
+        \hline
+
+        \begin{itemize}
+            \item Tempo de geração do relatório;
+            \item Percentagem média de uso da CPU;
+            \item Número de \emph{bytes} lidos e escritos para disco, lógico (inclui \emph{page
+                  cache}) e físico;
+            \item Número de \emph{bytes} e pacotes transmitidos e recebidos pela rede InfiniBand.
+        \end{itemize} &
+        \begin{itemize}
+            \item Número total de \emph{jobs}, \emph{stages} e \emph{tasks}, e quantos destes foram
+                  de facto executados (remoção dos \emph{skipped});
+            \item Número de \emph{bytes} e registos lidos e escritos em operações de \emph{shuffle};
+            \item Os dados acima, ao nível de \emph{jobs}, \emph{stages} e \emph{tasks} individuais.
+        \end{itemize} \\
+        \hline
+    \end{tabular}
+
+    \caption{Métricas de desempenho recolhidas para identificação de ineficiências.}
+    \label{instrumentation-metrics}
+\end{table}
+
+As métricas de sistema (uso de CPU, disco e rede) foram recolhidas diretamente do sistema de
+ficheiros \texttt{/proc}, enquanto que as métricas do Apache Spark foram obtidas através da sua API
+de instrumentação \cite{spark-instrumentation}. Procurou-se ainda recolher métricas sobre o uso de
+memória, tanto ao nível da \emph{Java Virtual Machine} (JVM) como do sistema. No entanto, os
+resultados revelaram-se inconsistentes devido à atuação do Garbage Collector da JVM, pelo que foram
+descartados.
+
+De forma a reduzir a variabilidade nos valores das métricas, cada resultado apresentado corresponde
+à média de cinco execuções consecutivas. Verificou-se, em análises preliminares, uma melhoria
+progressiva no desempenho das implementações em Apache Spark, associada ao aquecimento
+(\emph{warm-up}) da JVM. Por esse motivo, antes da recolha de quaisquer medições, descartaram-se
+cinco execuções para aquecimento. Esta metodologia, embora permita demonstrar o melhor desempenho
+alcançável por cada implementação, não reflete um cenário realista, visto que os relatórios serão
+gerados sem qualquer aquecimento.
+
+Desenvolveu-se um \emph{script} para automatizar a recolha de medições e facilitar a reprodução dos
+resultados obtidos. Este \emph{script} é ainda responsável pelo tratamento estatístico dos dados,
+descartando automaticamente as execuções para aquecimento e calculando a média e o desvio padrão
+das diversas métricas para as restantes. Também para possibilitar a replicação dos resultados, a
+tabela \ref{software-versions} apresenta as versões do \emph{software} utilizado:
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{@{}|l|r|}
+        \hline
+        \textbf{\emph{Software}} & \textbf{Versão} \\
+        \hline
+
+        Sistema Operativo   & Rocky Linux 8.5                \\ \hline
+        Kernel Linux        & 4.18.0-348.23.1.el8\_5.aarch64 \\ \hline
+        Python              & CPython 3.13.5                 \\ \hline
+        Apache Spark        & 4.1.1                          \\ \hline
+        \emph{Runtime} Java & OpenJDK 21.0.8                 \\ \hline
+        PostgreSQL          & 16.1                           \\ \hline
+        DuckDB              & 1.5.0                          \\ \hline
+    \end{tabular}
+
+    \caption{Versões do \emph{software} relevante utilizado.}
+    \label{software-versions}
+\end{table}
+
+\vspace{-0.5\baselineskip}
+\section{Implementações da Geração de Relatórios} % ------------------------------------------------
+
+\subsection{Original}
+
+Esta implementação do gerador de relatórios, embora semelhante à versão original desenvolvida pela
+equipa do Deucalion, não é idêntica. Análises preliminares de desempenho revelaram que o tempo de
+execução despendido em código Python é negligenciável face ao tempo gasto no Apache Spark. Assim, a
+implementação original foi adaptada à infraestrutura existente de validação de resultados e medição
+de desempenho, o que implicou alterações ao código Python mas não às interrogações Spark. No
+entanto, uma pequena alteração a uma das interrogações Spark foi necessária para resolver um
+\emph{crash} causado por dados mal formatados no \emph{dataset}.
+
+Nesta implementação, a geração de relatórios inicia-se com a leitura de todos os ficheiros
+\emph{Comma-Separated Values} (CSV), um por mês, de um \emph{dataset} anual de \emph{jobs}. Os tipos
+de dados das colunas são inferidos automaticamente, e os dados são consolidados num único \emph{data
+frame} que agrega todos os \emph{jobs} do ano. De seguida, são adicionadas várias colunas auxiliares
+ao \emph{data frame}, das quais as mais relevantes estão descritas na Tabela \ref{added-columns}:
+
+\begin{table}[H]
+    \begin{adjustwidth}{-2cm}{-2cm}
+        \centering
+        \begin{tabular}{@{}|l|l|}
+            \hline
+            \textbf{Coluna} & \textbf{Descrição} \\
+
+            \hline
+            \texttt{Period}                       &
+            Mês em que o \emph{job} foi executado \\
+
+            \hline
+            \texttt{COMPLETED}                        &
+            Estado de um \emph{job} normalizado:
+                \texttt{COMPLETED} ou \texttt{FAILED} \\
+
+            \hline
+            \texttt{cluster}                                                  &
+            Tipo de nó onde o \emph{job} foi executado, derivado da partição:
+                \texttt{ARM}, \texttt{AMD}, \texttt{GPU}                      \\
+
+            \hline
+            \texttt{Agency}                                                          &
+            Agência que financia o projeto do \emph{job}, derivada do nome da conta:
+                \texttt{FCT}, \texttt{EHPC}, \texttt{LOCAL}                          \\
+
+            \hline
+            \texttt{totalJobSeconds}                                                    &
+                Número total de core-segundos / GPU-segundos consumidos pelo \emph{job} \\
+            \hline
+        \end{tabular}
+    \end{adjustwidth}
+
+    \caption{
+        Descrição das principais colunas auxiliares adicionadas pela implementação
+        \texttt{Original}.
+    }
+    \label{added-columns}
+\end{table}
+
+Por último, a implementação \texttt{Original} executa três vezes, uma para cada período reportado
+(mês, trimestre, e ano) a sequência de interrogações Spark descritas abaixo, obtendo, de forma
+quase direta, os valores do relatório a exportar:
+
+\begin{enumerate}
+    \item Filtrar os \emph{jobs} pelo período a reportar e agrupá-los por \texttt{COMPLETED} e
+          \texttt{cluster}, de modo a contar os \emph{jobs} bem e mal-sucedidos por partição;
+
+    \item Para cada partição (três interrogações: ARM, AMD e GPU), filtrar os \emph{jobs} não-locais
+          da partição no período a reportar. O resultado é, desnecessariamente, agrupado
+          por \texttt{cluster} para calcular o número total de segundos de computação utilizados em
+          cada partição;
+
+    \item Filtrar os \emph{jobs} não-locais no período a reportar e agrupá-los por \texttt{cluster},
+          de modo a contar o número de \emph{jobs} por partição;
+
+    \item Esta interrogação é equivalente a filtrar os \emph{jobs} do projeto EuroHPC no período a
+          reportar e a agrupá-los por \texttt{cluster}, para contar o número de \emph{jobs}
+          EuroHPC por partição. Na prática, está mal otimizada e executa outras operações
+          redundantes (ver abaixo);
+
+    \item Semelhante ao ponto 4, mas contabilizando os segundos de computação de \emph{jobs} EuroHPC
+          por partição.
+\end{enumerate}
+
+Considere-se, como exemplo a implementação da interrogação 4 abaixo e o seu plano de execução lógico
+(Figura \ref{query-plan-original-4}), tanto para o período de um ano como de um mês:
+
+\begin{center}
+    \begin{tabular}{c}
+        \begin{lstlisting}
+... = self.data.filter(F.col('Period').isin(months)) \
+               .groupby(['Agency', 'cluster'])       \
+               .count()                              \
+               .orderBy('Agency')                    \
+               .filter(F.col('Agency') == 'EHPC')    \
+               .collect()
+        \end{lstlisting}
+    \end{tabular}
+\end{center}
+\vspace{-\baselineskip}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[height=0.75\textwidth]{res/plans/original/4.pdf}
+    \hfill
+    \includegraphics[height=0.75\textwidth]{res/plans/original/4_month.pdf}
+    \caption{
+        \onehalfspacing
+        Planos de execução da 4ª interrogação Apache Spark SQL da implementação \texttt{Original},
+        para um período em análise de um ano (esquerda) e um mês (direita).
+    }
+    \label{query-plan-original-4}
+\end{figure}
+
+Como se pode observar, o otimizador do Apache Spark SQL aplicou várias otimizações típicas à
+interrogação, como a reordenação de operações e a substituição do filtro baseado na coluna
+\texttt{Agency} por outro baseado em \texttt{Account}. Contudo, a otimização mais notória foi a
+eliminação total do filtro por \texttt{Period}: uma vez que esta coluna assume um valor constante
+para cada ficheiro, o otimizador consegue filtrar os dados lendo apenas os ficheiros relevantes.
+Ainda assim, o otimizador não eliminou todas as ineficiências nesta interrogação. Por exemplo,
+manteve uma ordenação desnecessária por \texttt{Agency} que, no código da interrogação, é seguida da
+eliminação de registos com todos menos um valor de \texttt{Agency}.
+
+Nas restantes interrogações desta implementação, o otimizador exibe um comportamento semelhante:
+consegue aplicar otimizações notáveis, mas não elimina todas as ineficiências. Contudo, o modelo de
+programação do Apache Spark não permite que o otimizador reduza o número de \emph{actions}
+executadas (por exemplo, operações \texttt{collect}), das quais a implementação \texttt{Original}
+executa 21. Assim, o foco dos autores não se centrou na otimização das interrogações, mas sim na sua
+abstração face aos parâmetros de saída do relatório: não é necessária uma relação quase 1:1 entre as
+interrogações e os resultados a gerar. Só deste modo será possível reduzir o número de interrogações
+e de \emph{actions}.
+
+\subsection{MultiPass}
+
+A leitura do \emph{dataset} na implementação \texttt{MultiPass} é semelhante à da \texttt{Original}.
+No entanto, deixaram de ser geradas algumas colunas auxiliares que não eram utilizadas. Embora estas
+alterações, devido à otimização dos planos de execução, não afetem o desempenho da aplicação,
+contribuem para a melhoria da qualidade do código ao eliminar código redundante.
+
+Após a leitura do \emph{dataset}, esta implementação do gerador de relatórios executa, para cada
+período reportado (mês, trimestre, e ano), uma única interrogação Apache Spark SQL. Esta isola os
+\emph{jobs} do período em questão, e agrupa-os por tuplos \texttt{(cluster, Agency, COMPLETED)},
+contando o número de \emph{jobs} e tempo computacional associado a cada tuplo. O resultado é formado
+por registos como o da Tabela \ref{multipass-row-example}:
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{
+            |>{\tt\arraybackslash}l|
+             >{\tt\arraybackslash}l|
+             >{\tt\arraybackslash}l|
+             >{\tt\arraybackslash}r|
+             >{\tt\arraybackslash}r|
+        }
+
+        \hline
+        cluster & Agency & COMPLETED & COUNT(*) & sum(totalJobSeconds) \\ \hline
+        ARM     & EHPC   & COMPLETED &       10 &                 3600 \\ \hline
+    \end{tabular}
+
+    \caption{Exemplo de um registo resultante da interrogação na implementação \texttt{MultiPass}.}
+    \label{multipass-row-example}
+\end{table}
+
+Ao iterar pelo resultado da interrogação, caso a implementação \texttt{MultiPass} encontre este
+registo, saberá que deve adicionar 10 ao número de \emph{jobs} bem-sucedidos, ao número de
+\emph{jobs} na partição Arm e ao número de \emph{jobs} EuroHPC, bem como uma hora (3600 segundos) ao
+total de horas do projeto EuroHPC e na partição Arm.
+
+A Figura \ref{query-plan-multipass} apresenta os planos de execução da interrogação descrita.
+Verifica-se, mais uma vez, que o otimizador filtra os \emph{jobs} de um dado período através da
+leitura exclusiva dos ficheiros CSV correspondentes aos meses desse intervalo. No entanto, ainda são
+executadas três \emph{actions} durante a geração do relatório, valor que pode ser pode ainda ser
+reduzido.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{res/plans/multipass/1.pdf}
+    \hfill
+    \includegraphics[width=0.55\textwidth]{res/plans/multipass/1_month.pdf}
+    \caption{
+        \onehalfspacing
+        Planos de execução da interrogação Apache Spark SQL na implementação \texttt{MultiPass},
+        para um período em análise de um ano (cima) e um mês (baixo).
+    }
+    \label{query-plan-multipass}
+\end{figure}
+
+\subsection{SinglePass}
+
+Ao contrário da \texttt{MultiPass}, esta implementação executa  apenas uma \emph{action} na etapa de
+processamento do \emph{dataset}. O seu funcionamento é semelhante: agrupa os \emph{jobs} por tuplos
+\texttt{(Period, cluster, Agency, COMPLETED)} numa única operação. Depois, a informação do mês
+associada a cada grupo de \emph{jobs} (\texttt{Period}) permite determinar para quais dos períodos
+(mês, trimestre ou ano) esse deve ser contabilizado.
+
+O plano de execução desta interrogação, semelhante ao de \texttt{MultiPass}, está representado na
+Figura \ref{query-plan-singlepass}. Análises de desempenho preliminares mostraram que a maior parte
+do tempo de execução tinha origem na leitura do \emph{dataset}, tendo-se esse tornado o próximo foco
+da otimização.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{res/plans/singlepass/1.pdf}
+    \caption{
+        Plano de execução da interrogação Apache Spark SQL na implementação \texttt{SinglePass}.
+    }
+    \label{query-plan-singlepass}
+\end{figure}
+
+\subsection{FastLoad}
+
+Esta implementação do gerador de relatórios distingue-se da \texttt{SinglePass} apenas na forma como
+se realiza a leitura do \emph{dataset}.
+
+Em primeiro lugar, todas as implementações anteriores inferem o esquema dos ficheiro CSV (colunas e
+tipos de dados) com base no seu conteúdo, uma operação que requer um passe adicional de
+processamento dos dados \cite{spark-csv}. A implementação \texttt{FastLoad} define manualmente o
+esquema dos ficheiros, eliminando esse trabalho adicional, embora torne a \emph{query} menos
+flexível: se forem adicionadas novas colunas aos ficheiros, esta implementação terá de ser
+atualizada para as suportar.
+
+Além disso, esta implementação também tira proveito das funcionalidades de leitura de ficheiros em
+\emph{bulk} do Apache Spark. Assim, é possível ler todos os ficheiros do \emph{dataset} numa única
+operação, evitando uma união no plano de execução da interrogação, como mostra a Figura
+\ref{query-plan-fastload}:
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{res/plans/fastload/1.pdf}
+    \caption{
+        Plano de execução da interrogação Apache Spark SQL na implementação \texttt{FastLoad}.
+    }
+    \label{query-plan-fastload}
+\end{figure}
+
+\subsection{PostgreSQL}
+
+Para avaliar o desempenho do Apache Spark em comparação com outras plataformas, a implementação
+melhor otimizada (\texttt{FastLoad}) foi portada para PostgreSQL e DuckDB. Contudo, o PostgreSQL
+apresenta limitações significativas na leitura de ficheiros CSV, nomeadamente a incapacidade de
+importação de ficheiros em \emph{bulk}. Assim, a implementação \texttt{PostgreSQL} aproxima-se mais
+da abordagem \texttt{SinglePass} do que da \texttt{FastLoad}.
+
+Neste contexto, cada ficheiro tem de ser importado na sua totalidade para um tabela em memória, sem
+possibilidade de filtrar colunas durante o processo. Só após esta leitura completa é possível isolar
+os campos relevantes (ver Tabela \ref{added-columns}). Já a geração do relatório mantém-se
+equivalente às implementações \texttt{FastLoad} e \texttt{SinglePass}: uma única interrogação
+PostgreSQL agrega toda a informação necessária para produzir os valores finais do relatório.
+
+\subsection{DuckDB}
+
+A geração de relatórios com DuckDB consiste num porte direto da implementação \texttt{FastLoad}. Em
+primeiro lugar, todos os ficheiros CSV são lidos em \emph{bulk} e processados, gerando uma tabela em
+memória que contém apenas as colunas necessárias para a geração de relatórios (ver Tabela
+\ref{added-columns}). De seguida, esta tabela é processada de forma análoga à implementação
+\texttt{SinglePass}, recorrendo a uma interrogação DuckDB.
+
+\section{Resultados Obtidos} % ---------------------------------------------------------------------
+
+\subsection{Comparação das Implementações}
+
+O desempenho das várias implementações desenvolvidas foi medido, e encontra-se apresentado na Figura
+\ref{implementation-comparison} abaixo. Importa realçar que, de acordo com a metodologia adotada,
+não foram contabilizados os tempos de inicialização do \emph{cluster} do Spark (quando aplicável).
+
+\begin{figure}[H]
+    \center
+    \begin{tikzpicture}
+        \begin{axis}[
+            ybar,
+            width             = 0.85\textwidth,
+            height            = 7cm,
+            symbolic x coords = {
+                Original, MultiPass, SinglePass, PostgreSQL, FastLoad, DuckDB
+            },
+            xtick            = data,
+            xtick style      = {draw = none},
+            xticklabel style = {font = \footnotesize, rotate = 45, anchor = north east},
+            enlarge x limits = 0.2,
+            ylabel           = {Speedup},
+            ymin             = 0,
+            ymax             = 55, 
+            yticklabel style = {font = \scriptsize},
+            ylabel near ticks,
+            ytick pos = left,
+            nodes near coords,
+            point meta              = explicit symbolic,
+            nodes near coords style = {font = \footnotesize, align = center, yshift=3pt},
+            ylabel style            = {font = \footnotesize}
+        ]
+            \addplot[fill = blue!40, draw = blue!60] coordinates {
+                (Original,    1.00) [1.0x  \\ \tiny ($35.23 \pm 0.14$ s)]
+                (MultiPass,   3.10) [3.1x  \\ \tiny ($11.36 \pm 0.15$ s)]
+                (SinglePass,  3.61) [3.6x  \\ \tiny ($9.75 \pm 0.13$ s)]
+                (PostgreSQL,  5.07) [5.1x  \\ \tiny ($6.94 \pm 0.02$ s)]
+                (FastLoad,   27.96) [28.0x \\ \tiny ($1.26 \pm 0.03$ s)]
+                (DuckDB,     40.46) [40.5x \\ \tiny ($0.87 \pm 0.003$ s)]
+            };
+        \end{axis}
+    \end{tikzpicture}
+    \vspace{-\baselineskip}
+    \caption{
+        \onehalfspacing
+        \emph{Speedups} relativos e tempos de execução (média $\pm$ desvio padrão) das diferentes
+        implementações de geradores de relatórios.
+    }
+    \label{implementation-comparison}
+\end{figure}
+
+No que diz respeito às implementações baseadas em Apache Spark, verifica-se que, como esperado, o
+desempenho melhora à medida que são aplicadas mais otimizações. Contudo, importa compreender as
+razões subjacentes a esta melhoria. Para tal, analisaram-se algumas métricas relevantes recolhidas
+durante a execução das várias implementações, apresentadas na Tabela \ref{spark-metrics}.
+
+\begin{table}[H]
+    \begin{adjustwidth}{-2cm}{-2cm}
+        \centering
+        \begin{tabular}{|l|r|r|r|r|r|}
+            \hline
+            \textbf{Implementação}                   &
+            \textbf{Tempo (s)}                       &
+            \textbf{\emph{Jobs}}                     &
+            \textbf{Estágios}                        &
+            \textbf{Tarefas}                         &
+            \textbf{Leituras de Disco Lógicas (MiB)} \\ \hline
+
+            \texttt{Original}   & $35.23 \pm 0.14$ & 72 & 72 & 72 & 908.350 \\
+            \texttt{MultiPass}  & $11.36 \pm 0.15$ & 30 & 30 & 76 & 196.280 \\
+            \texttt{SinglePass} &  $9.75 \pm 0.13$ & 26 & 26 & 61 & 151.539 \\
+            \texttt{FastLoad}   &  $1.26 \pm 0.03$ &  2 &  2 & 25 &  73.835 \\ \hline
+        \end{tabular}
+    \end{adjustwidth}
+
+    \caption{
+        \onehalfspacing
+        Comparação de métricas de instrumentação Spark entre as diferentes implementações. Os
+        números de estágios e tarefas referem-se aos executados (excluem-se os \emph{skipped}).
+    }
+    \label{spark-metrics}
+\end{table}
+
+A análise das métricas de execução revela as principais causas responsáveis para a melhoria de
+desempenho entre as implementações \texttt{Original}, \texttt{MultiPass} e \texttt{SinglePass}:
+observa-se uma diminuição significativa no número de \emph{jobs} e de estágios, mas sobretudo na
+quantidade de leituras de disco efetuadas. Como estas implementações não recorrem a qualquer
+mecanismo de \emph{caching}, cada interrogação Spark SQL implica a leitura de um ou mais ficheiros
+CSV. Assim, ao diminuir o número de interrogações, como fazem as otimizações aplicadas, diminui-se
+também a quantidade de dados lidos e o número de pedidos ao sistema operativo. A diferença de
+desempenho entre as implementações \texttt{MultiPass} e \texttt{SinglePass} é menor, uma vez que o
+trabalho na análise inicial do esquema dos ficheiros CSV se começa a tornar muito significativo,
+representando cerca de metade das leituras efetuadas.
+
+Já o ganho significativo de $7.8\times$ entre as implementações \texttt{SinglePass} e
+\texttt{FastLoad} explica-se de forma distinta. Embora se registe uma redução acentuada no número de
+\emph{jobs} e estágios, verifica-se que o número médio de tarefas por estágio aumenta de 2.4 para
+12.5. Isto sugere que esta implementação consegue explorar de forma mais eficiente o paralelismo
+disponibilizado pelos vários núcleos do processador. Infelizmente, foram obtidas medições inválidas
+da taxa de utilização da CPU (com valores negativos), o que impede a confirmação de uma eventual
+melhoria na eficiência da sua utilização. Importa referir, no entanto, que, apesar do menor tempo de
+execução desta versão, a sua adoção impede a modificação do esquema dos ficheiros CSV sem alteração
+do código.
+
+O DuckDB, por ser uma ferramenta desenvolvida em C++ (o que lhe confere menor \emph{overhead}) e ter
+um maior foco em \emph{datasets} mais pequenos, apresentou um melhor desempenho. A geração de
+relatórios com tecnologias que não Apache Spark teve um caráter meramente exploratório, pelo que não
+se aprofundou a análise das razões subjacentes ao melhor desempenho da implementação
+\texttt{DuckDB}.
+
+Importa ainda realçar que o desempenho inferior observado na solução PostgreSQL se deveu, sobretudo,
+ao tempo necessário para a importação inicial dos dados. Num cenário real, em que os dados já
+estivessem persistidos na base de dados, o tempo de resposta às interrogações seria
+significativamente mais competitivo.
+
+\subsection{Análises de Escalabilidade}
+
+Foi realizada um análise de escalabilidade forte para comparar a melhor implementação em Apache
+Spark (\texttt{FastLoad}) com a solução em DuckDB, e averiguar se estas conseguem tirar proveito do
+grau de paralelismo oferecido pelos 48 núcleos do processador Fujitsu A64FX. Os resultados obtidos
+são apresentados na Figura \ref{scalability-analyses}:
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            % Propriedades gerais do gráfico
+            width        = 0.45\textwidth,
+            height       = 0.45\textwidth,
+            legend style = {at={(0.02, 0.94)}, anchor=north west},
+            % Propriedades do eixo X
+            xlabel           = {\footnotesize Threads},
+            xticklabel style = {font = \scriptsize},
+            xmin             = 1,
+            xmax             = 48,
+            xlabel near ticks,
+            % Propriedades do eixo Y
+            ylabel           = {\footnotesize \emph{Speedup}},
+            yticklabel style = {font = \scriptsize},
+            ymin             = 0,
+            ymax             = 8,
+            ylabel near ticks
+        ]
+
+            \addplot[mark=none, thick, dotted, forget plot] coordinates {(1, 1) (100, 100)};
+
+            \addplot[NavyBlue, mark = triangle*, mark size = 1.5pt] table [x=THREADS, y=SPEEDUP]
+                {res/results/treated/ScalabilityDuckDB.csv};
+
+            \addplot[BrickRed, mark = square*, mark size = 1.5pt] table [x=THREADS, y=SPEEDUP]
+                {res/results/treated/ScalabilityFastLoad.csv};
+
+            \legend{\scriptsize \texttt{DuckDB}, \scriptsize \texttt{FastLoad}}
+        \end{axis}
+    \end{tikzpicture}
+
+    \caption{
+        \onehalfspacing
+        Resultados das análises de escalabilidade forte das implementações \texttt{FastLoad} e
+        \texttt{DuckDB}. A linha a tracejado representa o \emph{speedup} linear (ideal).
+    }
+    \label{scalability-analyses}
+\end{figure}
+
+Observa-se que a solução em Apache Spark escala melhor com o aumento do número de \emph{threads},
+atingido um \emph{speedup} máximo de $7.1\times$ em relação à execução \emph{single-threaded} do
+mesmo \emph{workload}. Este valor é superior ao \emph{speedup} máximo de $2.7\times$ obtido com
+DuckDB. Ainda assim, a implementação \texttt{DuckDB} supera a \texttt{FastLoad} em tempo de execução
+puro. No entanto, nenhuma das implementações se aproxima do \emph{speedup} linear ideal.
+
+Os autores apresentam duas teorias para explicar os resultados: a arquitetura do Apache Spark está
+melhor concebida para tirar proveito de um maior número de \emph{threads}, e / ou o DuckDB é tão
+eficiente que se aproxima dos limites computacionais do sistema (por exemplo, largura de banda de
+memória ou problemas de contenção no \emph{kernel} Linux). Contudo, avaliar estas hipóteses exigiria
+uma análise de desempenho muito mais detalhada, fora do âmbito deste estudo.
+
+O que se observa é que a percentagem de tempo do \emph{executor} do Spark despendida na realização
+de tarefas (1 -- \emph{Idle ratio}) diminui à medida que o número de \emph{threads} aumenta, como
+ilustra a figura \ref{idle-ratio}, sugerindo possíveis aumentos no \emph{overhead} de sincronização
+e potenciais problemas de desbalanceamento de carga.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            % Propriedades gerais do gráfico
+            width   = 0.45\textwidth,
+            height  = 0.45\textwidth,
+            % Propriedades do eixo X
+            xlabel           = {\footnotesize Threads},
+            xticklabel style = {font = \scriptsize},
+            xmin             = 1,
+            xmax             = 48,
+            xlabel near ticks,
+            % Propriedades do eixo Y
+            ylabel           = {\footnotesize \emph{Idle Ratio (\%)}},
+            yticklabel style = {font = \scriptsize},
+            ymin             = 0,
+            ymax             = 100,
+            ylabel near ticks
+        ]
+
+            \addplot[BrickRed, mark = square*, mark size = 1.5pt] table [x = THREADS, y = IDLE]
+                    {res/results/treated/IdleRatio.csv};
+        \end{axis}
+    \end{tikzpicture}
+
+    \caption{
+        Evolução do \emph{idle ratio} da implementação \texttt{FastLoad} com o aumento do número de
+        \emph{threads}.
+    }
+    \label{idle-ratio}
+\end{figure}
+
+\subsection{Restantes Tentativas de Otimização}
+
+Ao longo do processo de otimização, foram exploradas diversas estratégias que, embora potencialmente
+benéficas, não resultaram em melhorias de desempenho mensuráveis para o caso de estudo em análise.
+
+Em primeiro lugar, não se verificou qualquer benefício na utilização dos mecanismos de \emph{cache}
+e persistência do Apache Spark, uma vez que as implementações mais eficientes não reutilizam dados:
+o fluxo de processamento é linear, e os ficheiros CSV são lidos e processados apenas uma vez. Da
+mesma forma, não se registaram ganhos com o aumento da memória atribuída ao \emph{driver} e ao
+\emph{executor} (parâmetros \texttt{driver.memory} e \texttt{executor.memory}), dado que o
+\emph{dataset} cabe integralmente em memória e não ocorrem \emph{shuffles} significativos para
+disco (todos os \emph{shuffles} são na ordem dos poucos KiB).
+
+Ao contrário das otimizações anteriores, que não encontram justificação teórica para este caso de
+estudo, a estratégia mais promissora avaliada foi o ajuste do tamanho das partições dos dados
+(parâmetro \texttt{spark.sql.files.maxPartitionBytes}). Sem qualquer ajuste, o número máximo de
+tarefas geradas pelo Spark na implementação \texttt{FastLoad} é 24. Reduzir o tamanho das partições
+para 2 MiB permite aumentar o número de tarefas para 43, possibilitando um maior grau de
+paralelismo. Contudo, o maior número de tarefas não se traduziu numa melhoria de desempenho, mesmo
+quando testados outros tamanhos de partição (1 MiB e 3 MiB).
+
+Por outro lado, identificou-se uma potencial otimização. Para gerar o relatório de um determinado
+mês, basta considerar os ficheiros de \emph{jobs} até essa data. Implementações como
+\texttt{DuckDB}, no entanto, leem sempre todos os ficheiros de \emph{jobs}, independentemente do
+mês do relatório. Embora esta abordagem não afete o desempenho no mês em estudo (dezembro, já que
+todos os ficheiros têm de ser lidos), pode revelar-se ineficiente para os restantes meses.
+
+\subsection{Problemas Metodológicos}
+
+Como já foi referido, a metodologia adotada, devido às suas execuções para aquecimento, não reflete
+um cenário realista. No entanto, existem outros problemas a considerar. Em primeiro lugar, uma
+análise mais detalhada do desempenho de execuções consecutivas da implementação \texttt{FastLoad}
+revelou que cinco execuções não são suficientes para a aquecer JVM até ao seu estado ótimo. A figura
+\ref{jvm-warmup-times} mostra que a média das cinco medições usualmente recolhidas é superior ao
+desempenho máximo que a JVM pode oferecer (com um diferença de $\sim 20 \%$). Contudo, atingir esse
+desempenho exigiria um número excessivamente elevado de execuções para aquecimento (mais de 30), o
+que se torna impraticável.
+
+\begin{figure}[H]
+    \center
+    \begin{tikzpicture}
+        \begin{axis}[
+            % Propriedades gerais do gráfico
+            ybar,
+            x         = 4pt,
+            bar width = 4pt,
+            % Propriedades do eixo X
+            xlabel           = {Número de execuções},
+            xticklabel style = {font = \scriptsize},
+            xtick pos        = bottom,
+            xlabel near ticks,
+            % Propriedades do eixo Y
+            ylabel           = {Tempo de execução (s)},
+            yticklabel style = {font = \scriptsize},
+            ymin             = 0,
+            ymax             = 2,
+            ytick pos        = left,
+            ylabel near ticks
+        ]
+
+            \draw [pattern=north east lines] (axis cs:5, 0) rectangle (axis cs:10, 2);
+
+            \addplot[fill = blue!40] table [x expr=\coordindex + 0.5, y = TIME]
+                {res/results/treated/Warmup.csv};
+
+            \draw [red, thick] (axis cs:0, 1.2558) -- (axis cs:60, 1.2558);
+            \node [red] at (axis cs:60, 1.35) {$\bar{t}$};
+        \end{axis}
+    \end{tikzpicture}
+    \vspace{-0.5\baselineskip}
+    \caption{
+        \onehalfspacing
+        Tempos de execuções sucessivas de \texttt{FastLoad}, com medições usualmente recolhidas (5
+        medições após 5 execuções para aquecimento) e média das mesmas representadas. Para uma
+        melhor legibilidade, o tempo da primeira execução não é visível na escala do gráfico.
+    }
+    \label{jvm-warmup-times}
+\end{figure}
+
+Além disso, devido à existência da \emph{page cache}, a exclusão das primeiras execuções para
+aquecimento é também relevante para aplicações que não são baseadas na JVM, como a geração de
+relatórios com PostgreSQL e DuckDB. Na primeira execução, o \emph{dataset} é lido a partir do disco
+e colocado na \emph{page cache}, uma cache em memória do sistema operativo que otimiza operações de
+\emph{input-output}. Já na segunda execução, o \emph{dataset} será lido a partir da \emph{page
+cache}, tornando irrelevante o desempenho do meio de armazenamento onde se encontra. Isto é possível
+porque o \emph{dataset} cabe integralmente em memória.
+
+A Tabela \ref{pagecache-demo} mostra as leituras lógicas e físicas de disco das primeiras execuções
+de \texttt{FastLoad} e evidencia que, após a primeira execução, deixam de ocorrer leituras físicas
+de disco. Este comportamento é observado em todas as restantes implementações. No entanto, sem
+permissões de super-utilizador, não é possível limpar a \emph{page cache} entre execuções, o que
+impede a eliminação deste efeito nos resultados.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|r|r|}
+        \hline
+                                                 &
+        \textbf{Leituras de disco lógicas (MiB)} &
+        \textbf{Leituras de disco físicas (MiB)} \\
+        \hline
+
+        \textbf{Execução 1} &
+                      87.69 &
+                      73.44 \\ \hline
+
+        \textbf{Execução 2} &
+                      73.84 &
+                       0.00 \\ \hline
+
+        \textbf{Execução 3} &
+                      73.84 &
+                       0.00 \\ \hline
+    \end{tabular}
+
+    \caption{
+        \onehalfspacing
+        Leituras de disco lógicas (incluem \emph{page cache}) e físicas (implicam acesso ao
+        LustreFS) durante as primeiras execuções do gerador de relatórios \texttt{FastLoad}.
+    }
+    \label{pagecache-demo}
+\end{table}
+
+Em suma, a metodologia adotada não só é altamente irrealista, como também falha em capturar o
+desempenho máximo dos geradores de relatórios baseados em Apache Spark.
 
 \section{Conclusões} % -----------------------------------------------------------------------------
 
+Em suma, foi possível otimizar significativamente a geração dos relatórios periódicos do Deucalion,
+recorrendo a métricas de sistema e às excelentes ferramentas de instrumentação do Apache Spark para
+comparação e avaliação das otimizações implementadas.
+
+Utilizando Apache Spark, a implementação \texttt{FastLoad} permite alcançar um \emph{speedup} de
+$28\times$, desde que se esteja disposto a abdicar da flexibilidade do reconhecimento automático do
+esquema dos ficheiros no \emph{dataset}. Caso essa opção não seja viável, a implementação
+desenvolvida \texttt{SinglePass} oferece um \emph{speedup} mais moderado, mas ainda relevante, de
+$3.6\times$.
+
+A principal conclusão deste trabalho foi a importância crítica da seleção das ferramentas adequadas
+para cada tarefa. O Apache Spark, enquanto \emph{framework} para tratamento de dados em larga
+escala, não é a solução mais eficiente para um \emph{dataset} de apenas 73 MiB. Por exemplo, a
+implementação da geração de relatórios em DuckDB permitiu obter um \emph{speedup} de $40.5\times$ em
+relação à implementação original em Spark.
+
+No entanto, as medições de desempenho apresentadas não refletem um cenário realista, uma vez que
+incluem execuções para aquecimento que não ocorreriam em ambiente de produção. Além disso, estas
+medições não consideram outros fatores cruciais no desenho de sistemas de geração de relatórios.
+Por exemplo, seria pertinente avaliar se as garantias ACID (Atomicidade, Consistência, Isolamento e
+Durabilidade) proporcionadas por um sistema de gestão de bases de dados relacionais, como o
+PostgreSQL, poderiam trazer benefícios significativos em relação ao atual armazenamento dos
+\emph{jobs} em ficheiros CSV, mesmo que isso implique um eventual compromisso no desempenho da
+geração de relatórios.
+
+\section*{Financiamento} % -------------------------------------------------------------------------
+
+Este trabalho utilizou horas de computação atribuídas pela bolsa 2025.00010.HPCVLAB.UMINHO,
+financiada pela Fundação para a Ciência e a Tecnologia (FCT).
+
 \begin{thebibliography}{9}
     \small
-    \bibitem{exemplo}
-        Olá, mundo
+    \bibitem{deucalion}
+        National Advanced Computing Network.
+        ``DEUCALION.''
+        rnca.fccn.pt.
+        Accessed: Mar. 18, 2026.
+        [Online.] Available: \url{https://rnca.fccn.pt/en/deucalion}
+    \bibitem{apache-spark}
+        M. Zaharia, M. Chowdhury, M. J. Franklin, S. Shenker, and I. Stoica,
+        ``Spark: cluster computing with working sets,''
+        in \emph{Proceedings of the 2nd USENIX Conference on Hot Topics in Cloud Computing},
+        2010, pp. 10--17.
+    \bibitem{postgresql}
+        M. Stonebraker and L. A. Rowe,
+        ``The design of POSTGRES,''
+        in \emph{Proceedings of the 1986 ACM SIGMOD International Conference on Management of Data},
+        1986, pp. 340--355.
+    \bibitem{duckdb}
+        M. Raasveldt and H. Mühleisen,
+        ``DuckDB: an Embeddable Analytical Database,''
+        in \emph{Proceedings of the 2019 International Conference on Management of Data},
+        2019, pp. 1981--1984.
+    \bibitem{spark-instrumentation}
+        Apache Software Foundation.
+        ``Monitoring and Instrumentation.''
+        spark.apache.org.
+        Accessed: Mar. 19, 2026.
+        [Online.] Available: \url{https://spark.apache.org/docs/latest/monitoring.html}
+    \bibitem{spark-csv}
+        Apache Software Foundation.
+        ``CSV Files.''
+        spark.apache.org.
+        Accessed: Mar. 19, 2026.
+        [Online.] Available: \url{https://spark.apache.org/docs/latest/sql-data-sources-csv.html}
 \end{thebibliography}
 
+\pagebreak
+\begin{appendix} % ---------------------------------------------------------------------------------
+
+\section{Planos de Execução e Implementações}
+
+\subsection{Original}
+
+\subsubsection{Interrogação 1}
+\begin{center}
+    \begin{tabular}{c}
+        \begin{lstlisting}
+... = self.data.filter(F.col('Period').isin(months)) \
+               .groupby('COMPLETED', 'cluster')      \
+               .count()                              \
+               .collect()
+        \end{lstlisting}
+    \end{tabular}
+\end{center}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{res/plans/original/1.pdf}
+    \caption{Plano lógico anual: Original Q1.}
+\end{figure}
+\pagebreak
+
+\subsubsection{Interrogação 2}
+\begin{center}
+    \begin{tabular}{c}
+        \begin{lstlisting}
+... = self.data.filter(F.col('Agency') != 'LOCAL')   \
+               .filter(F.col('Period').isin(months)) \
+               .groupby('cluster')                   \
+               .sum('totalJobSeconds')               \
+               .filter(F.col('cluster') == cluster)  \
+               .collect()[0]                         \
+               .asDict()['sum(totalJobSeconds)']
+        \end{lstlisting}
+    \end{tabular}
+\end{center}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{res/plans/original/2.pdf}
+    \caption{Plano lógico anual: Original Q2.}
+\end{figure}
+\pagebreak
+
+\subsubsection{Interrogação 3}
+\begin{center}
+    \begin{tabular}{c}
+        \begin{lstlisting}
+... = self.data.filter(F.col('Agency') != 'LOCAL')   \
+               .filter(F.col('Period').isin(months)) \
+               .groupby('cluster')                   \
+               .count()                              \
+               .collect()
+        \end{lstlisting}
+    \end{tabular}
+\end{center}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{res/plans/original/3.pdf}
+    \caption{Plano lógico anual: Original Q3.}
+\end{figure}
+\pagebreak
+
+\subsubsection{Interrogação 4}
+\begin{center}
+    \begin{tabular}{c}
+        \begin{lstlisting}
+... = self.data.filter(F.col('Period').isin(months)) \
+               .groupby(['Agency', 'cluster'])       \
+               .count()                              \
+               .orderBy('Agency')                    \
+               .filter(F.col('Agency') == 'EHPC')    \
+               .collect()
+        \end{lstlisting}
+    \end{tabular}
+\end{center}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{res/plans/original/4.pdf}
+    \caption{Plano lógico anual: Original Q4.}
+\end{figure}
+\pagebreak
+
+\subsubsection{Interrogação 5}
+\begin{center}
+    \begin{tabular}{c}
+        \begin{lstlisting}
+... = self.data.filter(F.col('Agency') == 'EHPC')    \
+               .filter(F.col('Period').isin(months)) \
+               .groupby(['Agency', 'cluster'])       \
+               .sum()                                \
+               .collect()
+        \end{lstlisting}
+    \end{tabular}
+\end{center}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{res/plans/original/5.pdf}
+    \caption{Plano lógico anual: Original Q5.}
+\end{figure}
+\pagebreak
+
+\subsection{MultiPass}
+\begin{center}
+    \begin{tabular}{c}
+        \begin{lstlisting}
+... = self.data.filter(F.col('Period').isin(months))      \
+               .groupby('cluster', 'Agency', 'COMPLETED') \
+               .agg(
+                   F.count('*').alias('job_count'),
+                   F.sum('totalJobSeconds').alias('total_secs')
+               ).collect()
+        \end{lstlisting}
+    \end{tabular}
+\end{center}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{res/plans/multipass/1.pdf}
+    \caption{Plano de execução anual: MultiPass.}
+\end{figure}
+\pagebreak
+
+\subsection{SinglePass}
+\begin{center}
+    \begin{tabular}{c}
+        \begin{lstlisting}
+... = self.data.groupby('Period', 'cluster', 'Agency', 'COMPLETED') \
+               .agg(
+                   F.count('*').alias('job_count'),
+                   F.sum('totalJobSeconds').alias('total_secs')
+               ).collect()
+        \end{lstlisting}
+    \end{tabular}
+\end{center}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{res/plans/singlepass/1.pdf}
+    \caption{Plano de execução: SinglePass.}
+\end{figure}
+\pagebreak
+
+\subsection{FastLoad}
+\begin{center}
+    \begin{tabular}{c}
+        \begin{lstlisting}
+... = self.data.groupby('Period', 'cluster', 'Agency', 'COMPLETED') \
+               .agg(
+                   F.count('*').alias('job_count'),
+                   F.sum('totalJobSeconds').alias('total_secs')
+               ).collect()
+        \end{lstlisting}
+    \end{tabular}
+\end{center}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{res/plans/fastload/1.pdf}
+    \caption{Plano de execução: FastLoad.}
+\end{figure}
+
+\end{appendix}
 \end{document}
