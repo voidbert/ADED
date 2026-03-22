@@ -46,14 +46,14 @@ $ sbatch jobs/setup-env.sh
 
 - `Original`: The baseline Apache Spark SQL implementation used as a reference for validation.
 
-- `MultiPass`: Executes one separate querie for each required time Period (Month, Quarter, and
+- `MultiPass`: Executes one separate query for each required time Period (Month, Quarter, and
                Year), requiring multiple passes over the dataset.
 
 - `SinglePass`: An optimized Spark implementation that aggregates all needed information for the
                 required time periods.
 
 - `FastLoad`: It improves on previous optimizations by taking advantage of bulk reading and
-              replacing Spark's inferSchema with a manually defined schema, avoiding the costly
+              replacing Spark's `inferSchema` with a manually defined schema, avoiding the costly
               initial scan of the files to determine data types.
 
 - `DuckDB`: Executes the analytical query using the DuckDB engine, known for high-performance
@@ -73,7 +73,7 @@ implementations:
 $ python aded/perf.py -w 5 -r 5 <QueryClass> <DatasetPath>
 ```
 
-- `aded/validator.py`: Compares the output of an optimized query class against the Original 
+- `aded/validator.py`: Compares the output of an optimized query class against the Original
                        implementation to ensure its validity.
 
 ```console

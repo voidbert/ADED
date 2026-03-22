@@ -71,5 +71,5 @@ fi
 python aded/run.py "$QUERY_CLASS" "$DATASET_PATH/$YEAR"
 
 if [ "$QUERY_CLASS" = "PostgreSQL" ]; then
-    pkill -P $$ 
+    pkill -P $$
 fi
