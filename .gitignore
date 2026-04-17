@@ -24,3 +24,7 @@ TP1/**/*.tex
 TP1/results/**
 !TP1/report/*.tex
 TP1/report/**/*.pdf
+
+# TP2
+TP2/**/*.out
+TP2/**/*.gguf
