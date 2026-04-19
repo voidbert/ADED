@@ -28,3 +28,4 @@ TP1/report/**/*.pdf
 # TP2
 TP2/**/*.out
 TP2/**/*.gguf
+TP2/llama.cpp
