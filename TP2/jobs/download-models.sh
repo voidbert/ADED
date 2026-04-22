@@ -46,7 +46,13 @@
 #   $2 - Model name
 #   $3 - Model quantization
 download_model() {
-    wget -qP ../models/ "https://huggingface.co/$1/$2-GGUF/resolve/main/$2-$3.gguf"
+    if [ "$1" = 'lm-kit' ]; then
+        # This user does not follow correct naming conventions
+        file="$(printf "$2" | sed 's/4b-instruct/it-4B/g')"
+        wget -qP ../models/ "https://huggingface.co/$1/$2-gguf/resolve/main/$file-$3.gguf"
+    else
+        wget -qP ../models/ "https://huggingface.co/$1/$2-GGUF/resolve/main/$2-$3.gguf"
+    fi
 }
 
 # Create directory for models
@@ -57,10 +63,10 @@ download_model 'bartowski' 'SmolLM2-135M-Instruct' 'Q3_K_M'
 download_model 'bartowski' 'SmolLM2-135M-Instruct' 'Q4_K_M'
 download_model 'bartowski' 'SmolLM2-135M-Instruct' 'Q8_0'
 
-# Qwen3.5-2B
-download_model 'unsloth' 'Qwen3.5-2B' 'Q3_K_M'
-download_model 'unsloth' 'Qwen3.5-2B' 'Q4_K_M'
-download_model 'unsloth' 'Qwen3.5-2B' 'Q8_0'
+# Gemma3-Instruct-4B
+download_model 'lm-kit' 'gemma-3-4b-instruct' 'Q3_K_M'
+download_model 'lm-kit' 'gemma-3-4b-instruct' 'Q4_K_M'
+download_model 'lm-kit' 'gemma-3-4b-instruct' 'Q8_0'
 
 # Meta-Llama-3.1-Instruct-8B
 download_model 'bartowski' 'Meta-Llama-3.1-8B-Instruct' 'Q3_K_M'
