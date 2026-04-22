@@ -98,10 +98,8 @@ for model in $(find '../models' -type f); do
             }' > "$api_response_file"
 
         # Place responses in correct files
-        jq -r '.choices[0].message.content' "$api_response_file"           > \
-            "$prompt_output_directory/$(basename "$prompt").reply"
-        jq -r '.choices[0].message.reasoning_content' "$api_response_file" > \
-            "$prompt_output_directory/$(basename "$prompt").reasoning"
+        jq -r '.choices[0].message.content' "$api_response_file" > \
+            "$prompt_output_directory/$(basename "$prompt")"
     done
 
     # Stop the llama.cpp server
