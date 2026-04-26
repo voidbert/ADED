@@ -3,6 +3,7 @@
 # ABOUT --------------------------------------------------------------------------------------------
 #
 # Deucalion job for obtaining all models' responses for all prompts, for further human evaluation.
+# Usage: ./quality-test.sh
 #
 # LICENSE ------------------------------------------------------------------------------------------
 #
@@ -46,51 +47,64 @@ RESPONSES_DIR='../responses'
 LLAMA_CPP_BUILD_CONFIGURATION='build-clang-cpu'
 
 # Seed to be used for all prompts
-SEED=123
+SEED=0
 
 # Maximum number of tokens per reply
 MAX_TOKENS=4096
 
 # JOB ----------------------------------------------------------------------------------------------
 
-# Load necessary modules
-module purge
-module load GCC/13.3.0
-module load LLVM/19.1.7-GCCcore-13.3.0
-module load CMake/3.31.3-GCCcore-13.3.0
-module load BLIS/1.0-GCC-13.3.0
+# Parse command-line arguments
+if [ "$#" = 0 ]; then
+    # Not a Slurm job. Relaunch the script as a job for testing multiple models in parallel.
+    mkdir -p "$RESPONSES_DIR"
+    find '../models' -type f | while IFS= read -r model_file; do
+        sbatch "$0" "$(realpath "$model_file")"
+    done
+else
+    # Load necessary modules
+    module purge
+    module load GCC/13.3.0
+    module load LLVM/19.1.7-GCCcore-13.3.0
+    module load CMake/3.31.3-GCCcore-13.3.0
+    module load BLIS/1.0-GCC-13.3.0
 
-# Create a temporary file for llama.cpp API response
-trap 'rm "$api_response_file" 2> /dev/null' HUP INT TERM QUIT EXIT
-api_response_file="$(mktemp)"
+    # Script is being run as a Slurm job for testing a single model
+    model_file="$1"
+    model_name="$(basename "$model_file" | sed 's/\.gguf$//')"
 
-for model in $(find '../models' -type f); do
-    # Run llama.cpp's server in the background
-    "../llama.cpp/$LLAMA_CPP_BUILD_CONFIGURATION/bin/llama-server" -m "$model" 2>/dev/null &
+    # Create a temporary file for llama.cpp API responses
+    trap 'rm "$api_response_file" 2> /dev/null' HUP INT TERM QUIT EXIT
+    api_response_file="$(mktemp)"
 
-    # Wait for the model to load
+    # Start llama.cpp's server in the background and wait for the model to load
+    "../llama.cpp/$LLAMA_CPP_BUILD_CONFIGURATION/bin/llama-server" -m "$model_file" 2>/dev/null &
     while [ "$(curl -s 'http://localhost:8080/health' | jq -r '.status')" != 'ok' ]; do
         sleep 1
     done
 
     # Ask the model for a response for all prompts
-    for prompt in $(find '../prompts' -type f | sort); do
+    find '../prompts' -type f | sort | while IFS= read -r prompt_file; do
+        escaped_prompt="$(sed 's/"/\"/g' < "$prompt_file")"
+
         # Create a directory for storing the response to the current prompt
-        prompt_type="$(basename "$(dirname "$prompt")")"
-        prompt_output_directory="$RESPONSES_DIR/$(basename "$model")/$prompt_type"
+        prompt_type="$(basename "$(dirname "$prompt_file")")"
+        prompt_output_directory="$RESPONSES_DIR/$model_name/$prompt_type"
         mkdir -p "$prompt_output_directory"
 
         # Progress message
-        printf 'Processing %s: %s\n' "$(basename "$model")" "$prompt_type/$(basename "$prompt")"
+        printf '%s: Processing %s: %s\n'              \
+            "$(date +%H:%M:%S)"                       \
+            "$model_name"                             \
+            "$prompt_type/$(basename "$prompt_file")"
 
         # Obtain reponse from the model
-        prompt_contents="$(cat "$prompt" | sed 's/"/\"/g')"
         curl -s 'http://localhost:8080/v1/chat/completions' \
             --data '{
                 "messages": [
                     {
                         "role": "user",
-                        "content": "'"$prompt_contents"'"
+                        "content": "'"$escaped_prompt"'"
                     }
                 ],
                 "seed": '"$SEED"',
@@ -99,9 +113,9 @@ for model in $(find '../models' -type f); do
 
         # Place responses in correct files
         jq -r '.choices[0].message.content' "$api_response_file" > \
-            "$prompt_output_directory/$(basename "$prompt")"
+            "$prompt_output_directory/$(basename "$prompt_file")"
     done
 
     # Stop the llama.cpp server
     pkill llama-server
-done
+fi

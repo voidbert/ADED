@@ -29,3 +29,4 @@ TP1/report/**/*.pdf
 TP2/**/*.out
 TP2/**/*.gguf
 TP2/llama.cpp
+TP2/responses
