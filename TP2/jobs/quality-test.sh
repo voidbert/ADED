@@ -85,7 +85,7 @@ else
 
     # Ask the model for a response for all prompts
     find '../prompts' -type f | sort | while IFS= read -r prompt_file; do
-        escaped_prompt="$(sed 's/"/\"/g' < "$prompt_file")"
+        escaped_prompt="$(sed 's/"/\\"/g' < "$prompt_file")"
 
         # Create a directory for storing the response to the current prompt
         prompt_type="$(basename "$(dirname "$prompt_file")")"
