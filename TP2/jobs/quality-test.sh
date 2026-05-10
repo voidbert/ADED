@@ -41,7 +41,7 @@
 # CONFIGURATION ------------------------------------------------------------------------------------
 
 # Directory where to store prompt responses
-RESPONSES_DIR='../responses'
+RESPONSES_DIR='../results/responses'
 
 # llama.cpp build to use (build directory name)
 LLAMA_CPP_BUILD_CONFIGURATION='build-clang-cpu'
