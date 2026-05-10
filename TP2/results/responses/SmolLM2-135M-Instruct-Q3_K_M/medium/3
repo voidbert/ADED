@@ -1,0 +1,61 @@
+Matrix-matrix multiplication is a fundamental operation in linear algebra, where two matrices are multiplied together. It is used to find the inverse of a matrix, which is a matrix that, when multiplied by itself, results in the identity matrix.
+
+Matrix-vector multiplication, on the other hand, is a mathematical operation that involves multiplying two matrices, one by the other. It is used to find the covariance matrix of the two matrices, which is a crucial concept in linear algebra and its applications.
+
+Here's an example:
+
+Suppose we have two 2x2 matrices A and B:
+
+A = | 1  2 |
+    | 3  4 |
+
+B = | 5  6 |
+    | 7  8 |
+
+To find the covariance matrix of A and B, we need to find the determinant of A and the product of the matrices, A × B. The determinant of A is A^2 = 12. The product of A and B is B^2 = 21.
+
+Now, let's calculate the covariance matrix of A and B:
+
+Cov A = | 12 |
+    | 21 |
+
+Cov B = | 21 |
+    | 21 |
+
+So, the covariance matrix of A and B is:
+
+Cov A = | 12 |
+     | 21 |
+
+Cov B = | 21 |
+    | 21 |
+
+In this example, the covariance matrix of A and B is equal to the product of the matrices, which is equal to 12 and 21, respectively.
+
+For matrix-vector multiplication, the inverse of the matrix A is used to solve the system of equations:
+
+A^T A = B^T
+
+To find the inverse of A, we need to find its determinant, which is given by det(A) = (12)(12) = 124.
+
+The inverse of A is given by A^(-1) = (-1)(124) = 124.
+
+Now, let's calculate the covariance matrix of A and B:
+
+Cov A = | 124 |
+    | 21 |
+
+Cov B = | 21 |
+    | 21 |
+
+So, the covariance matrix of A and B is:
+
+Cov A = | 124 |
+     | 21 |
+
+Cov B = | 21 |
+    | 21 |
+
+In this example, the covariance matrix of A and B is a product of the matrices, which is equal to the product of the matrices, A × B = (124)(21) = 366, which is the inverse of A.
+
+In summary, the difference between matrix-matrix multiplication and matrix-vector multiplication is that matrix-matrix multiplication involves multiplying two matrices, whereas matrix-vector multiplication involves multiplying a matrix by itself. The covariance matrix of A and B is the inverse of the matrix A, which is equal to the product of the matrices, A × B = (124)(21) = 366.

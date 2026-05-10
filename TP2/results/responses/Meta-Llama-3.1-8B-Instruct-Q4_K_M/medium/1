@@ -1,0 +1,15 @@
+Speed and velocity are two fundamental concepts in physics that are often used interchangeably, but they have distinct meanings.
+
+**Speed:**
+Speed is a scalar quantity that refers to the rate at which an object moves in a particular direction. It is a measure of how fast an object is traveling, without considering its direction. Speed is usually measured in units such as meters per second (m/s), kilometers per hour (km/h), or miles per hour (mph).
+
+**Example:**
+A car is traveling at a speed of 60 km/h on a straight road. In this case, we only care about the rate at which the car is moving, and we don't need to know its direction.
+
+**Velocity:**
+Velocity, on the other hand, is a vector quantity that includes both the speed and direction of an object's movement. It is a measure of an object's rate of change of position, taking into account its direction of travel. Velocity is usually measured in units such as meters per second (m/s), kilometers per hour (km/h), or miles per hour (mph), along with a direction (e.g., north, south, east, or west).
+
+**Example:**
+A plane is flying at a speed of 800 km/h from New York to Los Angeles. In this case, we care not only about the speed of the plane (800 km/h) but also its direction of travel (from east to west).
+
+To illustrate the difference, consider a car traveling at 60 km/h on a circular track. The speed of the car remains the same, but its velocity is constantly changing due to the direction of its travel (east, south, west, and north).

@@ -1,0 +1,25 @@
+Based on the provided context, the main challenges when running large transformer models on CPU-only systems are:
+
+1. **Large memory footprint**: Transformer models have a large number of parameters, which can lead to high memory requirements, making it challenging to deploy them on systems with limited memory capacity, such as CPUs.
+2. **Repeated loading of weights during the decoding phase**: The repeated loading of weights during the decoding phase can lead to slow inference times, as the CPU needs to load the weights from memory, which can be time-consuming.
+
+Quantisation, also known as quantization, is a technique that can help address these challenges:
+
+Quantisation involves reducing the precision of the model's weights and activations from floating-point numbers to lower-precision integers. This can lead to several benefits:
+
+* **Reduced memory footprint**: By reducing the precision of the model's weights and activations, the memory footprint of the model can be significantly reduced, making it more feasible to deploy on systems with limited memory capacity.
+* **Faster inference times**: Since the weights and activations are now stored as integers, the CPU can access them more quickly, reducing the time it takes to load the weights during the decoding phase.
+
+Quantisation techniques, such as:
+
+* **Post-training quantisation** (PTQ): This involves quantising the model after training, using techniques such as linear scaling, clipping, and quantisation-aware training.
+* **Quantisation-aware training** (QAT): This involves training the model while quantising the weights and activations, to improve the accuracy of the quantised model.
+
+These techniques can help to reduce the memory footprint and improve the inference times of large transformer models on CPU-only systems, making them more deployable and efficient.
+
+However, it is worth noting that quantisation can also lead to a slight degradation in accuracy, as the lower-precision representations can introduce some errors during the computation. To mitigate this, researchers have explored various techniques, such as:
+
+* **Weight perturbation**: This involves adding a small amount of noise to the weights, to improve the robustness of the quantised model.
+* **Error-bounded quantisation**: This involves bounding the error introduced by quantisation, to ensure that the accuracy of the quantised model is within a certain threshold.
+
+By carefully selecting the quantisation technique and configuring the model, it is possible to balance the trade-off between accuracy and efficiency, making it possible to deploy large transformer models on CPU-only systems while maintaining acceptable performance.

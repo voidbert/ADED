@@ -59,7 +59,7 @@ if [ "$#" = 0 ]; then
     # Not a Slurm job. Relaunch the script as a job for testing multiple models in parallel.
     mkdir -p "$RESPONSES_DIR"
     find '../models' -type f | while IFS= read -r model_file; do
-        sbatch "$0" "$(realpath "$model_file")"
+        sbatch "$0" "$model_file"
     done
 else
     # Load necessary modules

@@ -1,0 +1,13 @@
+Machine learning and deep learning are two fundamental areas in computer science that have evolved significantly over the years.
+
+Machine learning is a subset of computer science that focuses on developing algorithms that enable computers to learn from data without being explicitly programmed. It involves training algorithms on large datasets to improve their performance on a specific task or problem, often using techniques such as supervised learning, unsupervised learning, and semi-supervised learning. Machine learning systems can be trained on a vast amount of data, which is fed into the system via data augmentation, which involves creating synthetic data to enhance the existing dataset.
+
+Deep learning, on the other hand, is a broader field of artificial intelligence that extends machine learning to the classification and regression tasks. It is a subset of machine learning that is specifically focused on learning and modeling complex systems, such as images, speech, and natural language processing, by using neural networks. Deep learning algorithms are inspired by the structure and function of the human brain, and they use a combination of techniques such as convolutional neural networks (CNNs) and recurrent neural networks (RNNs) to learn and represent information.
+
+Here's an example of deep learning:
+
+Deep learning algorithms are used to classify images of cat and dog. The image is fed into the convolutional neural network (CNN) algorithm, which is trained on a labeled dataset containing images of cats and dogs. The algorithm is then applied to another labeled dataset containing images of cat and dog with different features, such as color, texture, and movement. The algorithm is trained by finding the features that best represent the cat and dog, and then applying these features to the labeled images.
+
+In this example, the deep learning algorithm is used to learn the complex relationships between features in images, which is the essence of deep learning. The learned features are then used to make predictions on new images of cats and dogs.
+
+In summary, machine learning focuses on training algorithms to learn from data, while deep learning focuses on building neural networks to learn and represent information. While both areas share the common goal of improving computer performance, deep learning provides a broader, more sophisticated framework for achieving this goal.

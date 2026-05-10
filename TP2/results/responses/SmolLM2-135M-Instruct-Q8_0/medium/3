@@ -1,0 +1,15 @@
+Matrix-matrix multiplication and matrix-vector multiplication are two fundamental operations in linear algebra that are often confused with each other due to their similarities but distinct differences. The key distinction lies in their nature:
+
+Matrix-matrix multiplication is used when you have two matrices, say A and B, and you want to multiply their elements. You multiply the corresponding rows of A and B together. The result is a new matrix that is obtained by taking the transpose of the first matrix and the inverse of the second matrix.
+
+Matrix-vector multiplication, on the other hand, is used when you have two or more vectors. You multiply each of the vectors by a scalar, and the result is a new vector. The scalar is called the "operator" and is often denoted by the subscript "1".
+
+To illustrate the difference, consider a simple example. Suppose you have two vectors A = [1, 2] and B = [3, 4]. To multiply A and B, you would use matrix-matrix multiplication: A * B = [1 2 3] * [3 4 1] = [6 12 10].
+
+In the context of linear algebra, matrix-vector multiplication is used extensively in various applications, such as:
+
+1. Vector subtraction: If you want to subtract two vectors, A - B = [3 4] - [2 1] = [1 3 1].
+2. Projections and norms: If you have a vector and you want to project it onto a plane, or norm the vector across a plane, you can use matrix-vector multiplication.
+3. Matrix inversion: If you have a matrix of coordinates representing a vector, you can use matrix-vector multiplication to find its inverse.
+
+In summary, matrix-matrix multiplication is used when you have two matrices, while matrix-vector multiplication is used when you have two or more vectors. Matrix-vector multiplication is more general and can be used in a variety of contexts, whereas matrix-matrix multiplication is used in the simplest case and only applies when you have two or more matrices.

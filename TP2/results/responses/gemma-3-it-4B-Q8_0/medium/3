@@ -1,0 +1,69 @@
+Okay, let's break down the difference between matrix-matrix multiplication and matrix-vector multiplication, along with some practical examples.
+
+**1. Matrix-Matrix Multiplication**
+
+* **What it is:** This is the process of multiplying two matrices together.  It's a more complex operation than matrix-vector multiplication.
+* **The Rules:** You can only multiply matrices A and B if the number of *columns* in matrix A is equal to the number of *rows* in matrix B. Let's say you have a matrix A with dimensions *m x n* (m rows, n columns) and a matrix B with dimensions *n x p* (n rows, p columns). The resulting matrix C will have dimensions *m x p*.
+* **How it's calculated:** Each element *C<sub>ij</sub>* in the resulting matrix C is calculated by taking the dot product of the *i*th row of matrix A and the *j*th column of matrix B.  (Dot product means multiplying corresponding elements and summing the results).
+* **Formula:**  C<sub>ij</sub> = ∑<sub>k=1</sub><sup>n</sup> A<sub>ik</sub> * B<sub>kj</sub>
+
+* **Practical Application:  Transformations in Computer Graphics**
+   Matrix multiplication is fundamental to transformations in 3D computer graphics.  Imagine you want to rotate, scale, and translate a 3D object.  You can represent these operations as matrices.  Multiplying the object's position vector (represented as a matrix-vector) by the transformation matrices (rotation, scale, translation) will give you the object's new position after the transformation.  For example:
+      * **Rotation Matrix:** Rotates the object around an axis.
+      * **Scale Matrix:** Resizes the object.
+      * **Translation Matrix:** Moves the object in 3D space.
+
+**2. Matrix-Vector Multiplication**
+
+* **What it is:** This involves multiplying a matrix by a vector.
+* **The Rules:** The number of *columns* in the matrix must be equal to the *dimension* of the vector.  If you have a matrix A with dimensions *m x n* and a vector v with dimension *n*, the resulting vector will have dimension *m*.
+* **How it’s calculated:**  Each element of the resulting vector is calculated by taking the dot product of a single row of the matrix with the vector.
+* **Formula:**  w<sub>i</sub> = ∑<sub>k=1</sub><sup>n</sup> A<sub>ik</sub> * v<sub>k</sub>  (where w is the resulting vector)
+
+
+* **Practical Application:  Neural Networks**
+   Neural networks are heavily reliant on matrix-vector multiplication.  Here’s how:
+      * **Input Layer to Hidden Layers:**  The input vector (representing the features of a data point) is multiplied by a weight matrix.  Each column of the weight matrix represents the weights associated with a particular feature. This essentially performs a weighted sum of the inputs, transforming them into a new representation.
+      * **Hidden Layers to Output Layer:**  Similar calculations are performed in subsequent layers.
+   Essentially, matrix-vector multiplication is used to apply a linear transformation to the data at each layer of the network.
+
+
+**Here's a table summarizing the key differences:**
+
+| Feature           | Matrix-Matrix Multiplication | Matrix-Vector Multiplication |
+|--------------------|-----------------------------|------------------------------|
+| **Operands**       | Two matrices               | Matrix and a vector          |
+| **Dimensions**     | A (m x n), B (n x p) -> C (m x p) | A (m x n), v (n) -> w (m)     |
+| **Calculation**   | Dot product of rows and columns | Dot product of a row and a vector |
+| **Primary Use**     | Transformations, solving systems of equations | Feature extraction, neural networks |
+
+
+
+**Example (Simplified)**
+
+Let's say we have:
+
+* **Matrix A:**  [[1, 2], [3, 4]] (2x2)
+* **Matrix B:**  [[5, 6], [7, 8]] (2x2)
+
+Matrix-Matrix Multiplication (C = A * B):
+
+C = [[(1*5 + 2*7), (1*6 + 2*8)],
+     [(3*5 + 4*7), (3*6 + 4*8)]]
+C = [[19, 22],
+     [43, 50]]
+
+
+Now, let's say we have:
+
+* **Matrix A:** [[1, 2], [3, 4]] (2x2)
+* **Vector v:** [5, 6] (2)
+
+Matrix-Vector Multiplication (w = A * v):
+
+w = [[1*5 + 2*6], [3*5 + 4*6]]
+w = [[19, 23]]
+
+
+
+Do you want me to work through another example, or elaborate on a specific aspect (like how these operations are represented in code, or how they relate to linear algebra concepts)?

@@ -1,0 +1,46 @@
+**Machine Learning vs Deep Learning**
+
+Machine learning and deep learning are both subfields of artificial intelligence (AI) that involve training algorithms to make predictions or decisions based on data. However, they differ in their approaches, complexities, and applications.
+
+**Machine Learning**
+
+Machine learning is a broader field that involves training algorithms to learn from data without being explicitly programmed. It uses various techniques, such as decision trees, random forests, and support vector machines, to make predictions or decisions. Machine learning models can be trained on smaller datasets and are often used for tasks such as:
+
+* Predictive maintenance
+* Text classification
+* Image classification
+* Recommendation systems
+
+**Example of Machine Learning:** Spam Email Filter
+
+A spam email filter is a classic example of machine learning. The filter uses a trained algorithm to analyze email content and determine whether it's spam or not. The algorithm learns from a dataset of labeled emails (spam or not spam) and uses this knowledge to make predictions on new, unseen emails.
+
+**Deep Learning**
+
+Deep learning is a subset of machine learning that involves training neural networks with multiple layers to learn complex patterns in data. Deep learning models can learn to represent data in a hierarchical manner, capturing features at different levels of abstraction. Deep learning is often used for tasks such as:
+
+* Image recognition
+* Natural language processing
+* Speech recognition
+* Time-series forecasting
+
+**Example of Deep Learning:** Image Recognition
+
+A deep learning model for image recognition uses a convolutional neural network (CNN) to learn to recognize objects in images. The model is trained on a large dataset of labeled images (e.g., cats, dogs, cars) and uses this knowledge to make predictions on new, unseen images.
+
+**Key Differences**
+
+1. **Complexity:** Deep learning models are generally more complex and require larger amounts of data to train than machine learning models.
+2. **Layered Architecture:** Deep learning models use multiple layers to learn complex patterns in data, whereas machine learning models use a single layer or a few layers.
+3. **Task Complexity:** Deep learning is often used for more complex tasks, such as image recognition and natural language processing, whereas machine learning is often used for simpler tasks, such as text classification and predictive maintenance.
+
+**When to Use Each**
+
+1. **Use machine learning when:**
+	* You have a smaller dataset (thousands to tens of thousands of examples).
+	* You need to make predictions or decisions based on a smaller set of features.
+	* You're dealing with a simpler task, such as text classification or predictive maintenance.
+2. **Use deep learning when:**
+	* You have a large dataset (hundreds of thousands to millions of examples).
+	* You need to learn complex patterns in data, such as image recognition or natural language processing.
+	* You're dealing with a more complex task that requires hierarchical feature extraction.

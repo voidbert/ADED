@@ -1,0 +1,9 @@
+The main challenges when running large transformer models on CPU-only systems include the massive memory footprint, the repeated loading of weights during the decoding phase, and the need for parallelisation during training and inference. These factors can cause significant delays and make it difficult to perform high-quality inference on CPU-only models.
+
+To address these challenges, quantisation can play a crucial role in mitigating these issues by allowing for parallel processing of the model's long-range dependencies during training. By reducing the number of weights required during training, quantisation enables the model to focus on the important latent variables and reduce the load on the underlying memory. This is particularly important for models with sparse latent variables, as they are less likely to suffer from the memory bottlenecks associated with sequential models.
+
+Quantisation can also help improve the quality of inference by ensuring that the model's latent variables are well-represented and properly encoded during training. By using quantisation techniques, such as gradient descent and dropout, the model can be trained on smaller batches of data, allowing for more efficient computation and reduced memory consumption.
+
+Furthermore, quantisation can enable more efficient training of complex models, such as those with multiple latent variables. In this case, the model can be trained on a larger number of samples, which can reduce the need for sequential training and the corresponding computational requirements.
+
+Overall, quantisation can help address the main challenges of running large transformer models on CPU-only systems by providing better parallelization, reducing the load on the memory, and improving the quality of inference, making it more effective at capturing the long-range dependencies in text.

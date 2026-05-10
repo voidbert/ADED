@@ -1,0 +1,28 @@
+Based on the provided context, the main challenges when running large transformer models on CPU-only systems are:
+
+1. **Large memory footprint**: Transformer models require a significant amount of memory to store their weights, activations, and intermediate results. This can lead to memory constraints on CPU-only systems, which have limited memory capacity compared to GPUs.
+
+2. **Repeated loading of weights during the decoding phase**: In the decoding phase, the model needs to access the weights multiple times, which can lead to repeated memory accesses and increased memory latency. This can further exacerbate the memory constraints on CPU-only systems.
+
+Quantisation can help address these challenges in the following ways:
+
+1. **Reduced memory footprint**: By representing the model weights and activations using lower-precision data types (e.g., int8, float16), quantisation can significantly reduce the memory footprint of the model, making it more suitable for CPU-only systems with limited memory capacity.
+
+2. **Improved memory bandwidth**: Quantised weights can be loaded more quickly from memory, reducing the memory latency and improving the overall performance of the model on CPU-only systems.
+
+3. **Faster computation**: Quantisation can also lead to faster computation, as operations on lower-precision data types can be performed more efficiently.
+
+Some popular quantisation techniques for transformers include:
+
+1. **Weight quantisation**: Representing the model weights using lower-precision data types.
+2. **Activation quantisation**: Representing the activations using lower-precision data types.
+3. **Knowledge distillation**: Training a smaller model to mimic the behavior of a larger, pre-trained model, which can reduce the memory footprint and improve inference performance.
+4. **Dynamic quantisation**: Dynamically adjusting the precision of the model weights and activations during inference, based on the input data and the computational resources available.
+
+To implement quantisation for transformer models, you can use libraries such as:
+
+1. **TensorFlow Lite**: A lightweight version of TensorFlow that supports quantisation and deployment on edge devices.
+2. **PyTorch Quantization**: A PyTorch module that provides tools for quantisation and deployment of PyTorch models.
+3. **OpenVINO**: A cross-platform framework for AI deployment that supports quantisation and optimization of models for various hardware platforms.
+
+In summary, quantisation can help address the challenges of running large transformer models on CPU-only systems by reducing the memory footprint, improving memory bandwidth, and accelerating computation. By applying quantisation techniques, you can improve the performance and efficiency of your transformer models on CPU-only systems.

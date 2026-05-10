@@ -1,0 +1,18 @@
+Based on the provided context, the main challenges when running large transformer models on CPU-only systems are:
+
+1. **Large memory footprint**: Transformer models require a significant amount of memory to store their weights, attention matrices, and input/output tensors. This can lead to memory congestion on CPU-only systems, especially when dealing with large input sequences or high-resolution models.
+2. **Repeated loading of weights**: During the decoding phase, the model needs to access its weights multiple times to compute the attention scores, output embeddings, and other intermediate results. This repeated loading of weights can lead to slow inference speeds and increased latency.
+
+Quantisation, a technique used to reduce the precision of model weights and activations, can help address these challenges:
+
+1. **Reducing the model's memory footprint**: By representing model weights and activations with fewer bits (e.g., 8-bit integers or 16-bit floats), quantisation can significantly reduce the model's memory requirements. This can help alleviate memory congestion on CPU-only systems.
+2. **Faster weight loading**: Quantised weights typically require less memory to store, which can lead to faster loading times during inference. This is because the CPU can load the quantised weights more quickly, reducing the overall latency of the inference process.
+
+Some common quantisation techniques used to address these challenges include:
+
+1. **Weight Quantisation**: Representing model weights as integers (e.g., 8-bit) instead of floating-point numbers (e.g., 32-bit floats).
+2. **Activation Quantisation**: Representing intermediate activations (e.g., attention scores, output embeddings) as integers (e.g., 8-bit) instead of floating-point numbers.
+3. **Mixed-Precision Training**: Training the model with a lower precision (e.g., 16-bit floats) during training to reduce memory requirements and increase throughput.
+4. **Post-Training Quantisation**: Quantising the model's weights and activations after training, using techniques such as quantisation-aware training, dynamic quantisation, or static quantisation.
+
+By applying these quantisation techniques, developers can efficiently run large transformer models on CPU-only systems, reducing memory requirements and increasing inference speeds.

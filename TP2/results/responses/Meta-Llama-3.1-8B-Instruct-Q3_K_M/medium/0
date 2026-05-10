@@ -1,0 +1,26 @@
+Machine Learning (ML) and Deep Learning (DL) are two related but distinct subfields of Artificial Intelligence (AI). The key differences between them lie in their complexity, architecture, and applications.
+
+**Machine Learning (ML):**
+
+Machine Learning is a broader field that focuses on developing algorithms and statistical models that enable computers to learn from data, make decisions, and improve their performance over time. ML uses various techniques, such as supervised and unsupervised learning, to analyze data and make predictions or classifications.
+
+**Deep Learning (DL):**
+
+Deep Learning is a subfield of Machine Learning that focuses on developing neural networks with multiple layers, inspired by the structure and function of the human brain. DL uses techniques such as convolutional neural networks (CNNs) and recurrent neural networks (RNNs) to analyze complex data, such as images and videos.
+
+**Key differences:**
+
+1. **Complexity:** Deep Learning models are more complex and layered than Machine Learning models, with multiple hidden layers that process and transform the data.
+2. **Data type:** Machine Learning can work with various types of data, such as text, images, and audio, while Deep Learning is particularly suited for complex data, such as images and videos.
+3. **Architecture:** Machine Learning models are typically feedforward or recurrent, while Deep Learning models are hierarchical and have multiple layers.
+4. **Training time:** Deep Learning models require more computational resources and training time due to their complexity.
+
+**Example of Machine Learning:**
+
+**Recommendation System:** A movie recommendation system that uses user behavior data (e.g., ratings, watch history) to make personalized recommendations. The system uses a collaborative filtering algorithm to analyze user preferences and generate recommendations.
+
+**Example of Deep Learning:**
+
+**Image Classification:** A convolutional neural network (CNN) that classifies images into different categories (e.g., cars, dogs, buildings). The CNN uses multiple layers to extract features from the image data, such as edges, textures, and shapes, to make accurate predictions.
+
+In summary, Machine Learning is a broader field that encompasses various techniques for analyzing data, while Deep Learning is a subfield that uses complex neural networks to analyze complex data. While ML can work with various data types, DL is particularly suited for complex data, such as images and videos.

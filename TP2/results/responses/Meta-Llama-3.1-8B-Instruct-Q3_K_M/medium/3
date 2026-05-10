@@ -1,0 +1,62 @@
+**Matrix-Matrix Multiplication (MMult)**
+
+Matrix-matrix multiplication is a binary operation that takes two matrices as input and produces another matrix as output. It's denoted as `C = A * B`, where:
+
+- `A` and `B` are matrices of the same number of rows (or columns), but not necessarily the same dimensions.
+- `C` is the resulting matrix, which has the number of rows of `A` and the number of columns of `B`.
+
+Mathematically, the formula for matrix-matrix multiplication is:
+
+`C[i, j] = ∑(A[i, k] * B[k, j])`
+
+In simpler terms, to compute the element at row `i` and column `j` of `C`, we take the dot product of the `i`th row of `A` and the `j`th column of `B`.
+
+**Practical Application:**
+
+A common use of matrix-matrix multiplication is in image filtering. Imagine you have a matrix representing an image, and you want to apply a blur effect to it. You can use a matrix representing the blur filter to multiply with the image matrix. The resulting matrix will be a blurred version of the original image.
+
+**Matrix-Vector Multiplication (MV Mult)**
+
+Matrix-vector multiplication is a binary operation that takes a matrix and a vector as input and produces another vector as output. It's denoted as `y = A * v`, where:
+
+- `A` is a matrix.
+- `v` is a vector.
+- `y` is the resulting vector.
+
+Mathematically, the formula for matrix-vector multiplication is:
+
+`y[i] = ∑(A[i, j] * v[j])`
+
+In simpler terms, to compute the element at row `i` of `y`, we take the dot product of the `i`th row of `A` and the vector `v`.
+
+**Practical Application:**
+
+A common use of matrix-vector multiplication is in linear algebra applications such as solving systems of linear equations. Imagine you have a matrix representing the coefficients of a system of linear equations, and you want to find the solution vector. You can use matrix-vector multiplication to compute the solution by multiplying the coefficient matrix with the right-hand side vector.
+
+**Example Code (Python):**
+
+Here's an example code snippet using NumPy to demonstrate both operations:
+
+```python
+import numpy as np
+
+# Create two matrices
+A = np.array([[1, 2], [3, 4]])
+B = np.array([[5, 6], [7, 8]])
+
+# Perform matrix-matrix multiplication
+C = np.matmul(A, B)
+print("Matrix-Matrix Multiplication:")
+print(C)
+
+# Create a matrix and a vector
+A_vec = np.array([[1, 2], [3, 4]])
+v = np.array([5, 6])
+
+# Perform matrix-vector multiplication
+y = np.matmul(A_vec, v)
+print("\nMatrix-Vector Multiplication:")
+print(y)
+```
+
+Note that `np.matmul` is used to perform matrix-matrix multiplication, and `np.dot` (or `np.matmul`) is used to perform matrix-vector multiplication.

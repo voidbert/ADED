@@ -1,0 +1,19 @@
+The main challenges when running large transformer models on CPU-only systems include the high memory footprint and repeated loading of weights during the decoding phase. However, there are other challenges that are specific to CPU-only models, such as the performance degradation caused by the frequent loading of weights during training and the need for more memory resources to handle the additional tasks required for inference.
+
+One of the main challenges in using transformer models for CPU-only systems is the high latency during inference. Transformer models can only be trained within a few seconds, and the delays can be significant due to the complexity of the underlying model. The latency can be significantly affected by the presence of multiple layers, the use of attention mechanisms, and the need for a high number of hidden units.
+
+Moreover, the large memory footprint of transformer models requires a significant amount of memory resources to process the entire input sequence, which can be a problem when performing inference on CPU-only systems. This can lead to an increase in memory usage and potentially degrade performance due to the need for additional memory to handle the additional tasks.
+
+To address these challenges, we can use techniques such as:
+
+- **Parallelization**: Transformer models can be executed using parallel computing architectures, such as GPUs. This allows for a parallelisation of the training process, reducing the burden on CPU resources.
+
+- **Batch sampling**: Transformer models can be executed in batches, allowing for efficient parallelisation of the training process. This can be done by using a batch sampling algorithm or by using a generator-based batching technique.
+
+- **Optimised training**: Transformer models can be trained using a strategy that optimises the training process, such as using a batching approach or using a gradient-based approach.
+
+- **Reduced memory usage**: Transformer models can be used for inference on CPU-only systems, reducing the memory usage and increasing the performance of inference.
+
+- **Increased tensor dimensionality**: Transformer models can be trained to represent a large number of tokens, allowing for more accurate inference and reduced memory usage.
+
+By using these techniques, we can increase the performance of transformers on CPU-only systems, reducing the performance degradation caused by the repeated loading of weights during training and increasing the ability to handle longer input sequences.

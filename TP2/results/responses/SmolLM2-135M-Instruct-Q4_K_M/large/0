@@ -1,0 +1,16 @@
+Based on the document, here are the main challenges when running large transformer models on CPU-only systems:
+
+1. **Memory footprint**: The main challenges are:
+- **Large memory footprint**: The model's memory capacity is very large, which makes it difficult to process all tokens in parallel and is a significant bottleneck for training.
+- **Repeat loading**: The repeated loading of weights during the decoding phase can be frustrating, as it creates a bottleneck.
+
+2. **Sequential processing**: The main challenges are:
+- **Sequential processing**: Transformer processing all tokens in parallel can be difficult for CPU-only models due to the large memory footprint. This can lead to a slow convergence time and increased memory usage.
+- **Parallelization**: Transformer processing all tokens in parallel can help improve convergence times and decrease memory usage. This is because the model processes all tokens simultaneously, reducing the memory footprint.
+
+To address these challenges, quantisation could be a key enabler for scalable large transformer models. Quantization involves using techniques like sparse coding and label encoding to reduce the memory footprint of the model. This enables the model to process all tokens in parallel, reducing the memory usage. Quantisation can also help to:
+- **Improve convergence**: By reducing memory usage, quantisation can improve the convergence of the model, which is crucial for achieving good results on CPU-only systems.
+- **Reduce processing times**: Quantisation can help to reduce the processing time of the model, making it more accessible for CPU-only models.
+- **Increase memory usage**: Quantisation can help to reduce the memory usage of the model, making it more resource-efficient.
+
+By reducing the memory footprint and improving the convergence, quantisation can help to alleviate the memory bottleneck and make it easier for CPU-only models to learn and produce accurate results.
