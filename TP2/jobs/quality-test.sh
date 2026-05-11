@@ -77,14 +77,17 @@ else
     trap 'rm "$api_response_file" 2> /dev/null' HUP INT TERM QUIT EXIT
     api_response_file="$(mktemp)"
 
-    # Start llama.cpp's server in the background and wait for the model to load
-    "../llama.cpp/$LLAMA_CPP_BUILD_CONFIGURATION/bin/llama-server" -m "$model_file" 2>/dev/null &
+    # Start llama.cpp's server in the background
+    "../llama.cpp/$build_configuration/bin/llama-server" \
+        --no-mmap -m "$model_file" 2>/dev/null &
+
+    # Wait for the model to load
     while [ "$(curl -s 'http://localhost:8080/health' | jq -r '.status')" != 'ok' ]; do
         sleep 1
     done
 
     # Ask the model for a response for all prompts
-    find '../prompts' -type f | sort | while IFS= read -r prompt_file; do
+    find '../prompts' -type f | sort -r | while IFS= read -r prompt_file; do
         escaped_prompt="$(sed 's/"/\\"/g' < "$prompt_file")"
 
         # Create a directory for storing the response to the current prompt
