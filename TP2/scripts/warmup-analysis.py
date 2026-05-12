@@ -41,14 +41,14 @@ if len(sys.argv) != 2:
 csv_directory = sys.argv[1]
 
 # Load measurement data
-duckdb.sql(rf'''
+duckdb.sql(f'''
     CREATE VIEW all_measurements AS SELECT *
     FROM read_csv_auto('{csv_directory}/*.csv', normalize_names=true)
 ''')
 
 # Verify that, for all non-first runs, the number of prompt processed tokens is one due to KV-cache
 # usage. This query shows this phenomena happens for all models except for Gemma.
-print("\033[1mKV-CACHE USAGE\033[0m")
+print('\033[1mKV-CACHE USAGE\033[0m')
 duckdb.sql('''
     SELECT
         model,
@@ -76,7 +76,7 @@ duckdb.sql('''
 
 # Print MSEs for debugging
 """
-print("\033[1mMSER METHOD\033[0m")
+print('\033[1mMSER METHOD\033[0m')
 duckdb.sql('''
     SELECT
         model, compiler, quantization, seeding, prompt, warmup_runs, mse
@@ -88,7 +88,7 @@ duckdb.sql('''
 
 # Verify that MSER is orders of magnitude higher when there are no warmup runs: calculate geometric
 # mean of quotients between successive MSEs
-print("\033[1mMSER QUOTIENT GEOMETRIC MEANS\033[0m")
+print('\033[1mMSER QUOTIENT GEOMETRIC MEANS\033[0m')
 duckdb.sql(f'''
     WITH mses_quotients AS (
         SELECT

@@ -52,7 +52,7 @@ if len(sys.argv) != 2:
 csv_directory = sys.argv[1]
 
 # Load measurement data and filter which measurements to include
-duckdb.sql(rf'''
+duckdb.sql(f'''
     CREATE VIEW measurements AS SELECT *
     FROM read_csv_auto('{csv_directory}/*.csv', normalize_names=true)
     WHERE run > {WARMUP_RUNS} AND run <= {WARMUP_RUNS + MEASUREMENT_RUNS} AND
@@ -60,7 +60,7 @@ duckdb.sql(rf'''
 ''')
 
 # Compare raw quantization performance
-print("\033[1mRAW QUANTIZATION PERFORMANCE\033[0m")
+print('\033[1mRAW QUANTIZATION PERFORMANCE\033[0m')
 duckdb.sql('''
     SELECT
         model, prompt, quantization,
@@ -73,7 +73,7 @@ duckdb.sql('''
 ''').show(max_rows=1 << 32)
 
 # Calculate geometric means to compare quantizations
-print("\033[1mQUANTIZATION GEOMETRIC MEANS\033[0m")
+print('\033[1mQUANTIZATION GEOMETRIC MEANS\033[0m')
 duckdb.sql('''
     WITH per_config_means AS (
         SELECT
