@@ -61,10 +61,10 @@ MAX_TOKENS=4096
 if [ "$#" = 0 ]; then
     # Not a Slurm job. Relaunch the script as a job for testing multiple models in parallel.
     mkdir -p "$OUTPUT_DIRECTORY"
-    find '../models' -type f | while IFS= read -r model_file; do
-        for build_configuration in $LLAMA_CPP_BUILD_CONFIGURATIONS; do
+    for build_configuration in $LLAMA_CPP_BUILD_CONFIGURATIONS; do
+        find '../models' -type f | while IFS= read -r model_file; do
             for seeding in static dynamic; do
-                sbatch "$0" "$model_file" "$build_configuration" "$seeding"
+                sbatch "$0" "$build_configuration" "$model_file" "$seeding"
             done
         done
     done
@@ -77,17 +77,19 @@ else
     module load BLIS/1.0-GCC-13.3.0
 
     # Script is being run as a Slurm job for testing a single model
-    model_file="$1"
-    build_configuration="$2"
+    build_configuration="$1"
+    model_file="$2"
     seeding="$3"
-    model_name="$(basename "$model_file" | sed 's/\.gguf$//')"
-    output_file="$OUTPUT_DIRECTORY/$build_configuration-$model_name-$seeding.csv"
+    model_name="$(basename "$model_file" | sed -E 's/\-Q[0-9_KM]+\.gguf$//')"
+    quantization="$(basename "$model_file" | grep -Eo -- 'Q[0-9_KM]+')"
+    output_file="$OUTPUT_DIRECTORY/$build_configuration-$model_name-$quantization-$seeding.csv"
 
     # Write output CSV file header
-    echo 'MODEL,PROMPT,RUN,PROMPT_N,PREDICTED_N,CACHE_N,TTFT,TPOT' > "$output_file"
+    printf 'COMPILER,MODEL,QUANTIZATION,SEEDING,PROMPT,RUN,' >  "$output_file"
+    printf 'PROMPT_N,PREDICTED_N,CACHE_N,TTFT,TPOT,MEM\n'    >> "$output_file"
 
     # Ask the model for multiple responses for a prompt of each category
-    find '../prompts' -type f -name 0 | sort | while IFS= read -r prompt_file; do
+    find '../prompts' -type f -name '0' | sort -r | while IFS= read -r prompt_file; do
         escaped_prompt="$(sed 's/"/\\"/g' < "$prompt_file")"
         prompt_type="$(basename "$(dirname "$prompt_file")")"
 
@@ -106,12 +108,15 @@ else
             # Progress message
             printf '%s -> Processing %s: %s (run %s)\n' \
                 "$(date +%H:%M:%S)"                     \
-                "$model_name"                           \
+                "$model_name-$quantization"             \
                 "$prompt_type"                          \
                 "$run"
 
             # Write run information to output file
-            printf '%s,%s,%s,' "$model_name" "$prompt_type" "$run" >> "$output_file"
+            printf '%s,%s,%s,%s,%s,%s,'                  \
+                "$build_configuration"                   \
+                "$model_name" "$quantization" "$seeding" \
+                "$prompt_type" "$run"                    >> "$output_file"
 
             # Obtain reponse from the model and output timing metrics
             curl -s 'http://localhost:8080/v1/chat/completions' --data '{
@@ -126,9 +131,13 @@ else
             }' | jq -r '
                 .timings |
                     "\(.prompt_n),\(.predicted_n),\(.cache_n)," +
-                    "\(.prompt_ms + .predicted_per_token_ms),\(.predicted_per_token_ms)"
-            ' >> "$output_file"
+                    "\(.prompt_ms + .predicted_per_token_ms),\(.predicted_per_token_ms),"
+            '  | tr -d '\n' >> "$output_file"
 
+            # Get system memory usage in bytes
+            free -b | grep '^Mem:' | awk '{ printf "%s\n", $3 }' >> "$output_file"
+
+            # Update seed if seeding scheme is dynamic
             if [ "$seeding" = 'dynamic' ]; then
                 SEED="$((SEED + 1))"
             fi
