@@ -136,8 +136,8 @@ else
             # Get system memory usage in bytes
             free -b | grep '^Mem:' | awk '{ printf "%s\n", $3 }' >> "$output_file"
         done
-    done
 
-    # Stop the llama.cpp server
-    pkill llama-server
+        # Stop the llama.cpp server
+        pkill llama-server
+    done
 fi

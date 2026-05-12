@@ -142,8 +142,8 @@ else
                 SEED="$((SEED + 1))"
             fi
         done
-    done
 
-    # Stop the llama.cpp server
-    pkill llama-server
+        # Stop the llama.cpp server
+        pkill llama-server
+    done
 fi
