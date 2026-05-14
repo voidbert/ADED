@@ -9,7 +9,7 @@
 #     $ python -m venv .venv
 #     $ . .venv/bin/activate
 #     $ pip install duckdb
-#     $ ./warmup-analysis.py ../results/warmup
+#     $ ./warmup-analysis.py ../results/warmup ../results/mmap
 #
 # LICENSE ------------------------------------------------------------------------------------------
 #
