@@ -91,12 +91,34 @@ duckdb.sql(f'''
 ''')
 
 # Combine NUMA-aware and non-NUMA-aware measurements
+print('\033[1mTHREADING RAW DATA\033[0m')
 duckdb.sql('''
-    WITH all_measurements AS (
+    CREATE VIEW all_measurements AS
         SELECT * FROM no_numa_measurements
             UNION
         SELECT * FROM numa_measurements
-    )
+''')
+
+duckdb.sql('''
     SELECT * FROM all_measurements
     ORDER BY ALL
+''').show(max_rows=1 << 32)
+
+# Calculate geometric means to thread configurations
+print('\033[1mTHREADING GEOMETRIC MEANS\033[0m')
+duckdb.sql('''
+    WITH normalized AS (
+        SELECT
+            model, prompt, threads,
+            ttft_mean / MIN(ttft_mean) OVER (PARTITION BY model, prompt) AS ttft_ratio,
+            tpot_mean / MIN(tpot_mean) OVER (PARTITION BY model, prompt) AS tpot_ratio
+        FROM all_measurements
+    )
+    SELECT
+        threads,
+        GEOMEAN(ttft_ratio) AS ttft_geomean,
+        GEOMEAN(tpot_ratio) AS tpot_geomean,
+    FROM normalized
+    GROUP BY threads
+    ORDER BY tpot_geomean ASC
 ''').show(max_rows=1 << 32)
