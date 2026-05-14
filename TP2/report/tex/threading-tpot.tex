@@ -1,0 +1,179 @@
+\begin{tikzpicture}
+    \begin{axis}[
+        % Plot type
+        ybar,
+        % Plot dimensions
+        width            = \textwidth,
+        height           = 6cm,
+        enlarge x limits = 0.07,
+        bar width        = 1.1ex,
+        % Labels
+        ylabel            = {TPOT (ms)},
+        symbolic x coords = {
+            {Llama 3.1 / small},
+            {Llama 3.1 / medium},
+            {Llama 3.1 / large},
+            {Gemma 3 / small},
+            {Gemma 3 / medium},
+            {Gemma 3 / large},
+            {SmolLM 2 / small},
+            {SmolLM 2 / medium},
+            {SmolLM 2 / large}
+        },
+        x tick label style = {rotate = 40, anchor = east, font = \small},
+        % Axes
+        ymin = 0,
+        ymax = 290,
+        % Labels
+        nodes near coords,
+        nodes near coords style={
+            font   = \tiny,
+            rotate = 90,
+            anchor = west,
+            /pgf/number format/fixed,
+            /pgf/number format/precision = 1
+        },
+        % Grid
+        ymajorgrids = true,
+        grid style  = {dashed, gray!80}
+    ]
+
+        % 12T NUMA
+        \addplot+[
+            % Bar and label color
+            fill                                = red!60,
+            draw                                = red!80!black,
+            every node near coord/.append style = {color = red!80!black},
+            % Error bars
+            error bars/.cd,
+            y dir = both,
+            y explicit,
+            error bar style = {black, line width = 0.5pt},
+        ] coordinates {
+            ({Llama 3.1 / small},    189.54) +- (0,   0.01)
+            ({Llama 3.1 / medium},   231.82) +- (0,   0.02)
+            ({Llama 3.1 / large},    231.33) +- (0,   0.04)
+            ({Gemma 3 / small},      119.04) +- (0,   0.03)
+            ({Gemma 3 / medium},     130.35) +- (0,   0.02)
+            ({Gemma 3 / large},      130.47) +- (0,   0.05)
+            ({SmolLM 2 / small},      12.88) +- (0,   0.01)
+            ({SmolLM 2 / medium},     14.64) +- (0,   0.00)
+            ({SmolLM 2 / large},      15.40) +- (0,   0.00)
+        };
+
+        % 24T NUMA
+        \addplot+[
+            % Bar and label color
+            fill                                = orange!60,
+            draw                                = orange!80!black,
+            every node near coord/.append style = {color = orange!80!black},
+            % Error bars
+            error bars/.cd,
+            y dir = both,
+            y explicit,
+            error bar style = {black, line width = 0.5pt},
+        ] coordinates {
+            ({Llama 3.1 / small},    101.35) +- (0,   0.07)
+            ({Llama 3.1 / medium},   124.15) +- (0,   0.09)
+            ({Llama 3.1 / large},    123.23) +- (0,   0.07)
+            ({Gemma 3 / small},       68.66) +- (0,   0.02)
+            ({Gemma 3 / medium},      73.93) +- (0,   0.01)
+            ({Gemma 3 / large},       74.81) +- (0,   0.18)
+            ({SmolLM 2 / small},       9.76) +- (0,   0.00)
+            ({SmolLM 2 / medium},     10.85) +- (0,   0.01)
+            ({SmolLM 2 / large},      10.91) +- (0,   0.00)
+        };
+
+        % 36T NUMA
+        \addplot+[
+            % Bar and label color
+            fill                                = yellow!60,
+            draw                                = yellow!80!black,
+            every node near coord/.append style = {color = yellow!50!black},
+            % Error bars
+            error bars/.cd,
+            y dir = both,
+            y explicit,
+            error bar style = {black, line width = 0.5pt},
+        ] coordinates {
+            ({Llama 3.1 / small},     71.27) +- (0,   0.03)
+            ({Llama 3.1 / medium},    89.49) +- (0,   0.09)
+            ({Llama 3.1 / large},     87.40) +- (0,   0.01)
+            ({Gemma 3 / small},       52.36) +- (0,   0.01)
+            ({Gemma 3 / medium},      56.28) +- (0,   0.04)
+            ({Gemma 3 / large},       56.85) +- (0,   0.00)
+            ({SmolLM 2 / small},       9.01) +- (0,   0.02)
+            ({SmolLM 2 / medium},      9.39) +- (0,   0.02)
+            ({SmolLM 2 / large},       9.62) +- (0,   0.00)
+        };
+
+        % 44T NUMA
+        \addplot+[
+            % Bar and label color
+            fill                                = green!60,
+            draw                                = green!80!black,
+            every node near coord/.append style = {color = green!50!black},
+            % Error bars
+            error bars/.cd,
+            y dir = both,
+            y explicit,
+            error bar style = {black, line width = 0.5pt},
+        ] coordinates {
+            ({Llama 3.1 / small},     63.46) +- (0,   0.23)
+            ({Llama 3.1 / medium},    78.48) +- (0,   0.08)
+            ({Llama 3.1 / large},     77.59) +- (0,   0.05)
+            ({Gemma 3 / small},       47.51) +- (0,   0.24)
+            ({Gemma 3 / medium},      51.55) +- (0,   0.06)
+            ({Gemma 3 / large},       50.95) +- (0,   0.05)
+            ({SmolLM 2 / small},       8.52) +- (0,   0.01)
+            ({SmolLM 2 / medium},      9.29) +- (0,   0.02)
+            ({SmolLM 2 / large},       9.63) +- (0,   0.09)
+        };
+
+        % 48T NO-NUMA
+        \addplot+[
+            % Bar and label color
+            fill                                = blue!60,
+            draw                                = blue!80!black,
+            every node near coord/.append style = {color = blue!80!black},
+            % Error bars
+            error bars/.cd,
+            y dir = both,
+            y explicit,
+            error bar style = {black, line width = 0.5pt},
+        ] coordinates {
+            ({Llama 3.1 / small},     63.40) +- (0,   0.21)
+            ({Llama 3.1 / medium},    75.47) +- (0,   0.78)
+            ({Llama 3.1 / large},     76.69) +- (0,   0.64)
+            ({Gemma 3 / small},       47.97) +- (0,   1.12)
+            ({Gemma 3 / medium},      53.19) +- (0,   0.62)
+            ({Gemma 3 / large},       50.25) +- (0,   0.48)
+            ({SmolLM 2 / small},       9.43) +- (0,   0.82)
+            ({SmolLM 2 / medium},      9.71) +- (0,   0.14)
+            ({SmolLM 2 / large},      10.24) +- (0,   0.09)
+        };
+
+        % 48T NUMA
+        \addplot+[
+            % Bar and label color
+            fill                                = violet!60,
+            draw                                = violet!80!black,
+            every node near coord/.append style = {color = violet!80!black},
+            % Error bars
+            error bars/.cd,
+            y dir = both,
+            y explicit,
+            error bar style = {black, line width = 0.5pt},
+        ] coordinates {
+            ({Llama 3.1 / small},     60.93) +- (0,   0.49)
+            ({Llama 3.1 / medium},    75.93) +- (0,   0.62)
+            ({Llama 3.1 / large},     74.63) +- (0,   0.83)
+            ({Gemma 3 / small},       46.93) +- (0,   0.12)
+            ({Gemma 3 / medium},      52.50) +- (0,   0.74)
+            ({Gemma 3 / large},       51.89) +- (0,   1.22)
+            ({SmolLM 2 / small},       8.14) +- (0,   0.04)
+            ({SmolLM 2 / medium},      9.25) +- (0,   0.09)
+            ({SmolLM 2 / large},       9.02) +- (0,   0.08)
+        };
+    \end{axis}
+\end{tikzpicture}

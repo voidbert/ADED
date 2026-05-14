@@ -1,0 +1,1208 @@
+\documentclass[11pt, a4paper]{article}
+
+% PACOTES ------------------------------------------------------------------------------------------
+
+\usepackage{amsmath}
+\usepackage[portuguese]{babel}
+\usepackage{chngpage}
+\usepackage{float}
+\usepackage[a4paper, margin = 2cm]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{listings}
+\usepackage{multirow}
+\usepackage{pgfplots}
+\usepackage{pifont}
+\usepackage{setspace}
+\usepackage[dvipsnames]{xcolor}
+
+\usetikzlibrary{patterns}
+
+% INFORMAÇÃO DA CAPA -------------------------------------------------------------------------------
+
+\title{
+    \vspace*{\fill}
+    \textbf{
+        Otimização de Inferência de LLMs em Sistemas \\ Fujitsu A64FX
+    } \\
+    \vspace{\baselineskip}
+    \Large \textbf{Análise de Dados de Elevado Desempenho} \\
+           \textbf{Trabalho Prático II}
+}
+
+\author{
+    \textbf{Grupo 12} \\
+    \begin{tabular}{ll}
+        Humberto Gil Azevedo Sampaio Gomes & PG59806 \\
+        José António Fernandes Alves Lopes & PG59807 \\
+        José António Costa Soares          & PG60277
+    \end{tabular}
+}
+
+\date{
+    14 de maio de 2026
+    \vspace*{\fill}
+}
+
+% ESTILO -------------------------------------------------------------------------------------------
+
+% Espaçamento
+\onehalfspacing
+\setlength{\parskip}{\baselineskip}
+\setlength{\parindent}{0pt}
+\setlength{\intextsep}{1.5\baselineskip}
+\setlength{\belowcaptionskip}{-1.5\baselineskip}
+\renewcommand{\arraystretch}{1.5}
+
+% Estilo de listagens de código
+\lstdefinestyle{codestyle}{
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,
+    breaklines=false,
+    keepspaces=true,
+    showspaces=false,
+    showstringspaces=false,
+}
+\lstset{style=codestyle}
+
+% COMANDOS AUXILIARES ------------------------------------------------------------------------------
+
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+
+% CONTEÚDO DO DOCUMENTO ----------------------------------------------------------------------------
+
+\begin{document}
+
+% Capa
+
+\begin{center}
+    \includegraphics[width = 0.25\textwidth]{res/SchoolOfEngineering.pdf}
+\end{center}
+
+{\let\newpage\relax\maketitle}
+\maketitle
+\thispagestyle{empty}
+\pagebreak
+
+% Corpo do documento
+
+\begin{abstract} % ---------------------------------------------------------------------------------
+
+    Com o aumento do uso de ambientes de supercomputação para cargas de IA, a escassez de GPUs no
+    supercomputador Deucalion, obriga, por vezes, à execução de tarefas de inferência em CPUs.
+    Procurou-se medir e otimizar o desempenho da inferência de LLMs num único nó ARM do Deucalion,
+    equipado com um processador Fujitsu A64FX.
+
+    Através da \emph{engine} \texttt{llama.cpp}, foram avaliados modelos como o
+    \texttt{SmolLM-2-135M}, \texttt{Gemma-3-4B} e \texttt{Meta-Llama-3.1-8B} em diferentes
+    quantizações (\texttt{Q3\_K\_M}, \texttt{Q4\_K\_M} e \texttt{Q8\_0}), compiladores (GCC, Clang,
+    FCC) e configurações de \emph{threading}. Os resultados demonstram que a combinação Clang + BLIS
+    reduz o \emph{Time Per Output Token} (TPOT) em até 68.5\%, enquanto que o ajuste da política
+    NUMA (\texttt{distribute}) melhora o desempenho em 4,4\%. No entanto, a quantização não
+    apresentou padrões consistentes de ganho, e problemas de replicabilidade e escala na avaliação
+    da qualidade das respostas limitaram a análise. Apesar dos ganhos obtidos, há ainda potencial
+    para melhorias adicionais no ajuste de diversos outros parâmetros das LLMs (tamanho do
+    \emph{batch}, \emph{\textmu-batch}, contexto, \emph{etc}.).
+
+    Além da otimização empírica, foi desenvolvido um modelo analítico de desempenho baseado na
+    largura de banda da memória. No entanto, este subestima os tempos observados por fatores de
+    $7\times$ a $19\times$ devido a limitações não só na sua formulação como também na sua adequação
+    à arquitetura ARMv8.
+\end{abstract}
+
+\section{Introdução} % -----------------------------------------------------------------------------
+
+Nos últimos anos, as cargas de trabalho de inteligência artificial (IA) tornaram-se cada vez mais
+predominantes em supercomputadores, cujo uso já não se limita a aplicações tradicionais de
+computação científica. Entre 2021 e 2025, as cargas de treino e inferência de IA representaram cerca
+de 11\% das horas de computação atribuídas na rede EuroHPC \cite{eurohpc}. O supercomputador
+Deucalion \cite{deucalion}, inserido nesta rede, dispõe de um número limitado de GPUs (geralmente
+mais indicadas para estas cargas), que não é suficiente para suprir a procura, obrigando os seus
+utilizadores a executar cargas de IA em sistemas baseados em CPUs.
+
+Neste contexto, este trabalho visa otimizar processos de inferência em CPU, utilizando grandes
+modelos de linguagem (LLMs) como caso de estudo. Pretende-se executar diferentes modelos num nó ARM
+do Deucalion, equipado com um processador Fujitsu A64FX \cite{a64fx}, utilizando o
+\texttt{llama.cpp} \cite{llama.cpp} como \emph{engine} de inferência. Serão exploradas e afinadas
+variáveis como o compilador utilizado, o nível de quantização dos modelos e configurações de
+\emph{threading}. Além disso, pretende-se construir um modelo que permita prever o desempenho da
+inferência nestes ambientes.
+
+\section{\emph{Background}}
+
+A inferência de LLMs é um processo composto por duas fases distintas: \emph{prefill} e
+\emph{decode}. Na fase de \emph{prefill}, os \emph{tokens} da \emph{prompt} são processados em
+paralelo, por meio de operações matriciais densas, resultando numa elevada intensidade aritmética e
+num processo \emph{compute-bound} (limitado pela capacidade de processamento aritmético). Já a fase
+de \emph{decode}, que consiste na geração dos \emph{tokens} da resposta, envolve operações
+matriz-vetor esparsas, com baixa reutilização de dados e natureza \emph{memory-bound} (limitadas
+pela largura de banda da memória RAM) \cite{memory-bound, disaggregated-prefill-decode}.
+
+Neste contexto, a quantização emerge como uma estratégia de optimização fundamental. Ao reduzir a
+precisão dos pesos para formatos numéricos com menor número de bits, o espaço ocupado pelos pesos
+diminui, o que reduz a quantidade de dados a transferir da memória e melhora o desempenho da
+geração de \emph{tokens}. Contudo, essa técnica pode comprometer a qualidade das respostas geradas
+pelas LLMs.
+
+Por outro lado, a eficiência computacional durante o \emph{decoding} depende também da KV Cache.
+O mecanismo de atenção dos \emph{transformers} requer as representações de \emph{key} e \emph{value}
+de todos os \emph{tokens} precedentes \cite{attention}. Para resolver esse problema, mantém-se uma
+KV Cache, que armazena os tensores já computados. No entanto, a KV cache exige uma grande quantidade
+de memória, um recurso limitado, especialmente em cenários de nó único, como o analisado neste
+estudo. Mecanismos como \texttt{PagedAttention} visam atenuar este problema através da alocação
+dinâmica e reutilização de partes da KV cache \cite{paged-attention}.
+
+As \emph{engines} de inferência também exploram o paralelismo oferecido pelo \emph{hardware}. No
+caso de inferência em CPUs, as \emph{engines} utilizam instruções vetoriais e múltiplas
+\emph{threads} em execução paralela. Além disso, técnicas como \emph{Multi-token Prediction} (MTP)
+permitem a geração de vários \emph{tokens} da mesma sequência em paralelo \cite{mlp}.
+
+Por último, embora este estudo não analise o desempenho de pedidos concorrentes, esse é o cenário
+mais comum em ambientes de produção. Por isso, várias técnicas relevantes procuram extrair
+paralelismo para esse caso de uso. Um exemplo é o \emph{Continuous Batching}, que permite ao
+servidor processar múltiplos pedidos simultaneamente. Dessa forma, é possível computar vários
+\emph{tokens} de sequências diferentes na mesma iteração pelos pesos do modelo, amortizando o custo
+de leitura e aumentando significativamente o \emph{throughput}.
+
+\section{Metodologia} % ----------------------------------------------------------------------------
+
+Para avaliar o desempenho de inferência de LLMs de um modo geral, é necessário considerar o
+desempenho de vários modelos. Selecionaram-se os modelos apresentados na Tabela \ref{models}:
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|c|c|}
+        \hline
+        \textbf{Modelo}       &
+        \textbf{Quantizações} &
+        \textbf{Fonte}        \\ \hline
+
+        \texttt{SmolLM-2-135M-Instruct}                      &
+        \texttt{Q3\_K\_M}, \texttt{Q4\_K\_M}, \texttt{Q8\_0} &
+        \cite{smollm2}                                       \\ \hline
+
+        \texttt{Gemma-3-4B-Instruct} &
+        \texttt{Q3\_K\_M}, \texttt{Q4\_K\_M}, \texttt{Q8\_0} &
+        \cite{gemma3}                                        \\ \hline
+
+        \texttt{Meta-Llama-3.1-8B-Instruct}                  &
+        \texttt{Q3\_K\_M}, \texttt{Q4\_K\_M}, \texttt{Q8\_0} &
+        \cite{llama}                                         \\ \hline
+    \end{tabular}
+
+    \caption{LLMs selecionadas para \emph{benchmarking}.}
+    \label{models}
+\end{table}
+
+Foram vários os critérios utilizados para a seleção destes modelos:
+
+\begin{itemize}
+    \item Os modelos têm um número reduzido de parâmetros, capazes de caber na memória de um único
+          nó ARM (32 GiB) juntamente com as KV caches;
+
+    \item Os modelos são \emph{open weight}, disponíveis não só para os autores, mas também para
+          qualquer pessoa que pretenda replicar os nossos resultados;
+
+    \item Os modelos são de tamanhos e arquiteturas distintos, possibilitando uma análise abrangente
+          do desempenho;
+
+    \item Os modelos encontram-se disponíveis em quantizações distintas, permitindo uma análise dos
+          efeitos da quantização no desempenho e na qualidade das respostas;
+
+    \item Os modelos são do tipo \texttt{Instruct}, adequados para inferência orientada por
+          instruções \cite{instruct}.
+\end{itemize}
+
+A \emph{engine} de inferência selecionada para a análise de desempenho foi o \texttt{llama.cpp}
+\cite{llama.cpp}, devido à sua facilidade de utilização e ao seu excelente suporte para inferência
+em CPU. Esta escolha também exige que os modelos da Tabela \ref{models} se encontrem disponíveis no
+formato GGUF, o que se verifica.
+
+No âmbito deste trabalho, foram conduzidas diversas experiências com o objetivo de avaliar
+diferentes aspetos das LLMs, desde o seu desempenho até à qualidade das suas respostas. Um aspeto
+comum a todos os testes foi o ambiente de execução: todos os testes foram executados em nós da
+partição \texttt{normal-arm} do Deucalion, sendo cada modelo executado num único nó. Cada nó está
+equipado com um processador Fujitsu A64FX, com 48 núcleos ARMv8.2-A a 2.0 GHz, e ainda de 32 GiB de
+memória de alta largura de banda (HBM2) \cite{deucalion, a64fx}. Como a largura de banda da memória
+é geralmente o fator limitante para o desempenho de inferência \cite{memory-bound}, este foi o
+principal motivo para a utilização dos nós ARM em detrimento dos nós x86 também presentes no
+Deucalion. As versões do \emph{software} relevante utilizado encontram-se apresentadas na Tabela
+\ref{software-versions}.
+
+\begin{table}[H]
+    \centering
+    \begin{minipage}{0.6\textwidth}
+        \centering
+        \begin{tabular}{|l|r|}
+            \hline
+            \textbf{\emph{Software (Runtime)}} & \textbf{Versão}                \\ \hline
+            Sistema Operativo                  & Rocky Linux 8.5                \\ \hline
+            Kernel Linux                       & 4.18.0-348.23.1.el8\_5.aarch64 \\ \hline
+            \texttt{llama.cpp}                 & b8849                          \\ \hline
+            BLIS                               & 1.0                            \\ \hline
+        \end{tabular}
+    \end{minipage}%
+    \begin{minipage}{0.4\textwidth}
+        \centering
+        \begin{tabular}{|l|r|}
+            \hline
+            \textbf{\emph{Software} (Compilação)} & \textbf{Versão} \\ \hline
+            GNU C Compiler (GCC)                  & 13.3.0          \\ \hline
+            Clang                                 & 19.1.7          \\ \hline
+            Fujitsu C Compiler (FCC)              & 4.8.0           \\ \hline
+            CMake                                 & 3.31.3          \\ \hline
+        \end{tabular}
+    \end{minipage}
+
+    \caption{Versões do \emph{software} relevante utilizado.}
+    \label{software-versions}
+\end{table}
+
+Para a execução de qualquer teste, cria-se um servidor \texttt{llama-server}, submetem-se as
+\emph{prompts} através de pedidos HTTP à sua \emph{Completions API} \cite{completions-api}, e
+recolhem-se as respostas do servidor para extrair o \emph{output} das LLMs e métricas de desempenho.
+As configurações do \texttt{llama-server} utilizadas para os vários modelos são apresentadas na
+Tabela \ref{llama-configuration}. Estas correspondem às configurações predefinidas de cada modelo,
+com duas exceções:
+
+\begin{itemize}
+    \item O número máximo de \emph{tokens} a gerar foi definido como 4096, para evitar ciclos e
+          respostas intermináveis;
+
+    \item A \emph{flag} \texttt{--no-mmap} foi utilizada para forçar o carregamento total dos
+          modelos para memória, o que reduziu a frequência de \emph{crashes} observados para modelos
+          maiores, fenómeno que será discutido posteriormente.
+\end{itemize}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|c|c|c|}
+        \cline{2-4}
+        \multicolumn{1}{l|}{}  &
+        \textbf{SmolLM2}   &
+        \textbf{Gemma 3}   &
+        \textbf{Llama 3.1} \\ \hline
+
+        \textbf{Temperatura}                     & \multicolumn{3}{c|}{0.8}          \\ \hline
+        \textbf{Top-K}                           & \multicolumn{3}{c|}{40}           \\ \hline
+        \textbf{Top-P}                           & \multicolumn{3}{c|}{0.95}         \\ \hline
+        \textbf{Tipos de dados da KV cache}      & \multicolumn{3}{c|}{\texttt{f16}} \\ \hline
+        \textbf{Máximo de \emph{tokens} gerados} & \multicolumn{3}{c|}{4096} \\ \hline
+
+        \textbf{Tamanho do Contexto} &
+        8192                         &
+        \multicolumn{2}{c|}{131072}  \\ \hline
+
+        \textbf{Tamanho do Batch}         & \multicolumn{3}{c|}{2048} \\ \hline
+        \textbf{Tamanho do \textmu-batch} & \multicolumn{3}{c|}{512}  \\ \hline
+
+    \end{tabular}
+    \caption{Configuração do \texttt{llama.cpp} utilizada para cada modelo.}
+    \label{llama-configuration}
+\end{table}
+
+\subsection{Testes de Desempenho}
+\label{performance-tests}
+
+Estes testes têm como objetivo avaliar o desempenho dos modelos para uma dada configuração do
+\texttt{llama.cpp}, independentemente da qualidade das respostas geradas. Para isso, cada nó ARM
+executa uma instância de um \texttt{llama-server} com um único modelo e quantização. São enviadas,
+em sequência, várias \emph{prompts} para o servidor (uma de cada vez), e são recolhidas métricas
+sobre o desempenho do modelo para a execução de cada \emph{prompt}. Para garantir a replicabilidade
+dos resultados, a \emph{seed} de aleatoriedade é fixada em zero.
+
+As \emph{prompts} utilizadas são as S0, M0, e L0 do Anexo \ref{prompts}. Elas são enviadas ao
+servidor nesta ordem, cada uma repetida dez vezes, e o servidor é reiniciado entre diferentes tipos
+de \emph{prompt}, para garantir que não ocorre reuso da KV cache entre estes. Estas dez execuções
+são necessárias para que, posteriormente, seja possível selecionar quais \emph{runs} devem ser
+descartadas para \emph{warmup} e quais devem ser utilizadas para representar o desempenho do modelo.
+Para cada \emph{prompt} executada, as seguintes métricas de desempenho são extraídas da resposta do
+\texttt{llama-server} \cite{completions-api}:
+
+\begin{itemize}
+    \item Número de \emph{tokens} da \emph{prompt} processados;
+    \item Número de \emph{tokens} da \emph{prompt} reutilizados da KV cache;
+    \item \emph{Time To First Token} (TTFT) -- tempo até a geração do primeiro \emph{token},
+          estimado como a soma do tempo de processamento da \emph{prompt} com o tempo médio de
+          geração de um \emph{token} (TPOT);
+    \item \emph{Time Per Output Token} (TPOT) -- tempo médio de geração de um \emph{token};
+\end{itemize}
+
+Adicionalmente, são ainda recolhidas as seguintes métricas no final da execução de cada
+\emph{prompt}:
+
+\begin{itemize}
+    \item Uso de memória, através do comando \texttt{free} \cite{free}.
+\end{itemize}
+
+Resta determinar quantas \emph{runs} são necessárias para \emph{warmup} e para medições de
+desempenho. Para isso, realizaram-se testes de desempenho para todas as combinações possíveis de
+compilador, modelo, e quantização, e foi efetuada uma análise estatística para definir estes
+valores. Os valores de TPOT medidos revelaram-se bastante estáveis, sem diferenças significativas
+entre as primeiras execuções e as seguintes. No entanto, o mesmo já não se verificou para o TTFT,
+como ilustra a Figura \ref{warmup-ttft}.
+
+\begin{figure}[H]
+    \centering
+    \input{tex/warmup-llama.tex}
+    \input{tex/warmup-gemma.tex}
+    \input{tex/warmup-smollm.tex}
+
+    \caption{
+        \onehalfspacing
+        Valores de TTFT dos modelos testados em dez runs sucessivas das mesmas \emph{prompts},
+        utilizando Clang + BLIS, quantização \texttt{Q4\_K\_M}, e 48 \emph{threads}.
+    }
+    \label{warmup-ttft}
+\end{figure}
+
+Como se pode observar, nos resultados do Llama 3.1 e do SmolLM 2, o primeiro valor de TTFT medido é
+várias ordens de grandeza superior aos restantes (repare-se na escala logarítmica dos gráficos).
+Este fenómeno, também observado para os restantes compiladores e quantizações, deve-se à utilização
+da KV Cache: na primeira execução, o número de \emph{tokens} da \emph{prompt} processado corresponde
+ao total de \emph{tokens} da mesma; no entanto, nas execuções subsequentes, este valor reduz-se para
+1, uma vez que os \emph{tokens} restantes da \emph{prompt} são reutilizados da KV Cache. Já no caso
+do Gemma 3, este comportamento não se verifica de forma tão acentuada: apenas se observam reduções
+significativas no número de \emph{tokens} processados e, consequentemente, no TTFT, para a
+\emph{prompt} L0, independentemente do compilador ou da quantização utilizados.
+
+Foram realizadas experiências adicionais para estudar este fenómeno (como variar a \emph{seed} e a
+\emph{prompt}), e concluiu-se que a sua mitigação só é possível através da variação das prompts
+enviadas em sequência ao \texttt{llama-server}. Optou-se por não se alterar este aspeto na
+metodologia de \emph{benchmarking}, de forma a capturar o melhor desempenho possível dos modelos,
+ainda que os resultados não reflitam cenários realistas, onde existe uma maior diversidade de
+\emph{prompts}.
+
+Assim, concluiu-se que é necessária uma execução inicial para warmup. Para a medição de desempenho,
+optou-se por recolher as cinco medições subsequentes, de forma a calcular a média e o desvio padrão
+das diversas métricas. Este número mais elevado de medições é especialmente relevante para os
+valores de TTFT do SmolLM 2, que, por serem reduzidos, estão sujeitos a maior interferência do
+sistema e, consequentemente, a uma maior variabilidade.
+
+\subsection{Testes de Qualidade de Resposta}
+\label{quality-tests}
+
+Estes testes têm como objetivo avaliar a qualidade das respostas dos modelos, independentemente do
+seu desempenho. Para a sua execução, são utilizados servidores \texttt{llama-server}, configurados
+de acordo com a Tabela \ref{llama-configuration}. As \emph{prompts} no Anexo \ref{prompts} são
+enviadas a todos os servidores, e é recolhida a resposta gerada por cada modelo para cada uma delas.
+
+As \emph{prompts} abrangem diversas áreas de conhecimento (matemática, informática, física, química,
+artes, \emph{etc.}), permitindo uma avaliação abrangente dos modelos. Além disso, todas as
+\emph{prompts} foram redigidas em Inglês, a única língua suportada por todas as LLMs testadas.
+
+Para garantir a replicabilidade dos resultados, a \emph{seed} de aleatoriedade é fixada em zero. Em
+teoria, isto assegura que cada modelo devolve sempre a mesma resposta para a mesma \emph{prompt},
+embora, como se verificará adiante, isso possa não ocorrer na prática.
+
+Após a execução das LLMs, as respostas geradas são avaliadas por cada um dos autores deste trabalho,
+de acordo com a seguinte escala:
+
+\begin{itemize}
+    \item 0 -- A resposta é completamente incorreta e/ou não responde à \emph{prompt};
+    \item 1 -- A resposta responde corretamente à \emph{prompt}, mas contém erros em informações
+               auxiliares, como exemplos incorretos;
+    \item 2 -- A resposta responde corretamente à \emph{prompt} sem qualquer erro ou alucinação.
+\end{itemize}
+
+Esta escala não permite distinguir a qualidade de diferentes respostas corretas. Por exemplo, duas
+respostas podem estar corretas, mas uma pode fornecer exemplos muito mais ilustrativos do que a
+outra. No entanto, devido ao tamanho reduzido dos modelos, o foco principal foi avaliar a correção
+das respostas, e não a sua qualidade, um aspeto mais relevante para modelos maiores.
+
+Reconhecemos que esta metodologia apresenta várias limitações. Em primeiro lugar, os avaliadores,
+especialistas em informática, não são especialistas em todos os tópicos abordados, o que pode
+resultar em avaliações menos rigorosas para algumas \emph{prompts}. Além disso, o número limitado de
+\emph{prompts} e a falta de amostragem de \emph{seeds} resultam numa visão restrita do modelo, uma
+vez que são analisadas apenas quinze respostas por modelo, um número insuficiente para uma avaliação
+abrangente. No entanto, devido a restrições de tempo e recursos humanos, não foi possível abordar
+estes problemas de forma mais aprofundada.
+
+\section{Otimizações Realizadas} % -----------------------------------------------------------------
+
+Com uma metodologia de \emph{benchmarking} definida, passou-se à definição de uma metodologia de
+otimização. Optou-se por uma abordagem em cascata, na qual se varia uma variável de cada vez,
+selecionando a configuração com melhor desempenho antes de se avançar para o ajuste da variável
+seguinte. Deste modo, reduz-se consideravelmente o número de medições necessárias, uma vez que não é
+preciso testar todas as combinações possíveis de todas as variáveis. No entanto, existe o risco de
+convergência para um ótimo local, ou seja, não se garante que o melhor desempenho global seja
+atingido. As variáveis foram ajustadas na seguinte ordem:
+
+\begin{itemize}
+    \item Compilador utilizado para compilar o \texttt{llama.cpp};
+    \item Uso da \emph{flag} \texttt{--no-mmap};
+    \item Quantização dos modelos;
+    \item Configuração de \emph{threads} e acesso a memória não-uniforme (NUMA).
+\end{itemize}
+
+\subsection{Compilador Utilizado}
+
+O compilador utilizado para compilar um programa pode ter um impacto significativo no seu
+desempenho. Por isso, procurou-se comparar o desempenho do \texttt{llama.cpp} quando compilado com
+diferentes compiladores. Foram comparados os dois principais compiladores de C++ \emph{open-source}:
+GCC \cite{gcc} e Clang \cite{clang}. O \texttt{llama.cpp} também suporta o uso de bibliotecas BLAS
+para acelerar operações matriciais durante o processamento das \emph{prompts} \cite{llama-build}.
+Por isso, também se testou a compilação do \texttt{llama.cpp} com as seguintes bibliotecas:
+
+\begin{itemize}
+    \item OpenBLAS \cite{openblas};
+    \item BLIS \cite{blis};
+    \item FJBLAS \cite{fjblas}, uma biblioteca BLAS da Fujitsu optimizada para processadores
+          A64FX, que apenas é suportada pelo compilador FCC da Fujitsu \cite{fcc}.
+\end{itemize}
+
+A compilação do \texttt{llama.cpp} é, geralmente, simples. No Deucalion, após carregar os módulos de
+compilação necessários, basta executar os seguintes comandos num nó ARM, na diretoria do
+código-fonte do \texttt{llama.cpp}:
+
+\vspace{\baselineskip}
+\begin{lstlisting}[mathescape]
+$\mbox{\textdollar}$ export CC=gcc CXX=g++                     # Definir compiladores
+$\mbox{\textdollar}$ cmake -B build                            # Configurar compilacao
+$\mbox{\textdollar}$ cmake --build build --config Release -j48 # Compilar llama.cpp
+\end{lstlisting}
+
+Por omissão, as \emph{flags} de compilação são automaticamente otimizadas para o sistema. Neste
+caso, observou-se o uso da \emph{flag} \texttt{-march=a64fx+sve}, o que indica que o código gerado
+foi otimizado para processadores A64FX com suporte para SVE.
+
+Para adicionar suporte para bibliotecas BLAS, deve substituir-se a segunda linha do excerto acima
+por uma das seguintes, conforme a biblioteca BLAS a utilizar \cite{llama-build, cmake-blas}:
+
+\vspace{\baselineskip}
+\begin{lstlisting}[mathescape]
+$\mbox{\textdollar}$ cmake -B build -DGGML_BLAS=ON -DGGML_BLAS_VENDOR=OpenBLAS          # OpenBLAS
+$\mbox{\textdollar}$ cmake -B build -DGGML_BLAS=ON -DGGML_BLAS_VENDOR=FLAME             # BLIS
+$\mbox{\textdollar}$ cmake -B build -DGGML_BLAS=ON -DGGML_BLAS_VENDOR=Fujitsu_SSL2BLAMP # FJBLAS
+\end{lstlisting}
+
+Para certas configurações, a compilação decorreu sem qualquer problema. No entanto, como mostra a
+Tabela \ref{build-matrix}, não foi possível compilar o \texttt{llama.cpp} com a maioria das
+configurações desejadas. Em primeiro lugar, não foi possível \emph{linkar} o OpenBLAS, uma vez que,
+na versão compilada nos módulos do Deucalion, apenas a interface de 64-bits (ILP64) é suportada,
+enquanto que o \texttt{llama.cpp} utiliza a interface tradicional de 32-bits. Além disso, também não
+foi possível utilizar o FCC: o modo tradicional (FCC-Trad) tem suporte limitado para
+\emph{standards} recentes de C++, o que resultou em erros de \emph{templating} durante a compilação
+do \texttt{llama.cpp}; já o modo Clang (FCC-Clang) falha durante a geração de código ao tentar
+produzir uma instrução máquina inválida.
+
+\begin{table}[H]
+    \centering
+    \begin{adjustwidth}{-1cm}{-1cm}
+        \centering
+        \begin{tabular}{|c|c|c|c|c|}
+            \hline
+            \textbf{BLAS / Compilador} &
+            \textbf{GCC 13.3.0}        &
+            \textbf{Clang 19.1.7}      &
+            \textbf{FCC-Trad 4.8.0}    &
+            \textbf{FCC-Clang 4.8.0}   \\ \hline
+
+            \textbf{Nenhuma}  & \cmark & \cmark & \xmark & \xmark \\ \hline
+            \textbf{BLIS}     & \cmark & \cmark & \xmark & \xmark \\ \hline
+            \textbf{OpenBLAS} & \xmark & \xmark & \xmark & \xmark \\ \hline
+            \textbf{FJBLAS}   & --     &     -- & \xmark & \xmark \\ \hline
+        \end{tabular}
+    \end{adjustwidth}
+
+    \caption{Matriz de configurações de compilação do \texttt{llama.cpp} bem e mal sucedidas.}
+    \label{build-matrix}
+\end{table}
+
+Procurou-se ainda utilizar o FJBLAS com outros compiladores, carregando a biblioteca BLAS da Fujitsu
+em \emph{runtime} através da variável de ambiente \texttt{LD\_PRELOAD}, utilizando uma versão do
+\texttt{llama.cpp} corretamente compilada. No entanto, esta abordagem não foi possível, uma vez que
+o FJBLAS está disponível apenas como uma biblioteca estática. Desta forma, o número de configurações
+de compilação testadas foi significativamente inferior ao pretendido.
+
+Para avaliar os diferentes compiladores, foram realizados testes de desempenho (Secção
+\ref{performance-tests}), cujos resultados são apresentados na Figura \ref{compiler-results}.
+Verifica-se que, independentemente da utilização do BLIS, o Clang geralmente atinge valores de TPOT
+inferiores aos do GCC. Relativamente ao TTFT, observam-se semelhanças entre os resultados das
+diversas configurações de compilação. No entanto, as medições obtidas com o GCC, tanto para o TTFT
+como para o TPOT, apresentam maior instabilidade (com desvios padrão significativamente mais
+elevados), o que resulta em medições esporádicas mais elevadas, como é o caso do TTFT para
+\emph{prompts} de dimensão média do Gemma 3. Por outro lado, não se verificaram diferenças
+significativas no uso de memória entre as diferentes configurações de compilador.
+
+\begin{figure}[H]
+    \centering
+    \input{tex/compiler-ttft.tex}
+    \input{tex/compiler-tpot.tex}
+    \caption{
+        \onehalfspacing
+        Comparação de diferentes compiladores no TTFT e TPOT de vários modelos, utilizando
+        quantização \texttt{Q4\_K\_M} e 48 \emph{threads}.
+    }
+    \label{compiler-results}
+\end{figure}
+
+Para a metodologia de otimização em cascata, é necessário selecionar um compilador para ser
+utilizado nas medições das etapas seguintes. Com o objetivo de efetuar esta escolha de forma
+estatisticamente fundamentada, cada medição foi, em primeiro lugar, normalizada em relação ao melhor
+tempo obtido para a sua configuração específica de modelo e \emph{prompt}. De seguida, calculou-se a
+média geométrica por configuração de compilação, cujos resultados são apresentados na Tabela
+\ref{compiler-geomean}.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|r|r|}
+        \hline
+        \textbf{Configuração} & \textbf{TTFT} & \textbf{TPOT} \\ \hline
+        Clang + BLIS          &         1.057 &         1.004 \\ \hline
+        Clang                 &         1.099 &         1.019 \\ \hline
+        GCC + BLIS            &         1.104 &         1.371 \\ \hline
+        GCC                   &         1.555 &         1.691 \\ \hline
+    \end{tabular}
+    \caption{
+        \onehalfspacing
+        Média geométrica do TTFT e do TPOT, normalizados em relação ao melhor compilador por
+        \emph{benchmark}.
+    }
+    \label{compiler-geomean}
+\end{table}
+
+Observa-se que a configuração Clang + BLIS atinge os melhores tempos médios, tanto para o TTFT como
+para o TPOT, pelo que foi selecionada como base para as otimizações subsequentes.
+
+Os testes anteriores revelaram que a diferença de desempenho entre as configurações com e sem BLIS
+era mínima. No entanto, esses resultados não são representativos de cenários realistas, uma vez que,
+como já foi explicado, grande parte do TTFT nas medições realizadas se deve à consulta de KV cache.
+Assim, procurou-se comparar o desempenho do BLIS considerando apenas a execução de \emph{warmup} de
+cada modelo, onde todos os \emph{tokens} da \emph{prompt} são efetivamente processados. Os
+resultados, apresentados na Figura \ref{compiler-blis}, mostram que o impacto do BLIS para o
+desempenho é frequentemente negativo, especialmente no LLama 3.1 e na SmolLM 2, aumentando o TTFT,
+em contraste com o que é indicado na documentação do \texttt{llama.cpp} \cite{llama-build}.
+
+\begin{figure}[H]
+    \centering
+    \input{tex/compiler-blis.tex}
+    \caption{
+        \onehalfspacing
+        Comparação de diferentes compiladores no TTFT de \emph{warmup} de vários modelos, utilizando
+        quantização \texttt{Q4\_K\_M} e 48 \emph{threads}.
+    }
+    \label{compiler-blis}
+\end{figure}
+
+\subsection{Mapeamento do Modelo em Memória}
+
+Anteriormente, foi referido que modelos de maior dimensão, em particular o Llama 3.1 (em qualquer
+quantização), tinham tendência a causar um \emph{crash} do \texttt{llama-server} com um
+\texttt{BUS ERROR} durante a sua inicialização. A nossa hipótese é que este fenómeno esteja
+relacionado com a duplicação de páginas entre o \emph{kernel} e o \emph{userspace}, o que conduz a
+um maior consumo de memória e, consequentemente, ao término abrupto do servidor. No entanto, não foi
+possível validar esta hipótese, uma vez que o \emph{crash} ocorria de forma demasiado rápida para
+permitir a captura de amostras suficientes do uso de memória. O uso da \emph{flag}
+\texttt{--no-mmap} reduziu significativamente a frequência destes \emph{crashes}, embora não tenha
+eliminado o problema por completo.
+
+Ainda assim, é importante demonstrar, através de testes de desempenho (Secção
+\ref{performance-tests}), que o uso do \texttt{--no-mmap} não compromete o desempenho das LLMs. A
+Figura \ref{mmap-results} confirma isso: embora o consumo de memória com \texttt{--no-mmap} seja
+superior (devido à necessidade de carregar os pesos dos modelos para memória), não se verificam
+diferenças significativas nos valores de TTFT e TPOT entre as configurações \texttt{--mmap} e
+\texttt{--no-mmap}. Através de vários testes $t$ de Student, não foi possível detetar uma diferença
+estatisticamente significativa nos valores médios do TTFT e TPOT dos diversos modelos.
+
+\begin{figure}[H]
+    \centering
+    \input{tex/mmap-ttft.tex}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \input{tex/mmap-tpot.tex}
+    \input{tex/mmap-mem.tex}
+    \vspace{-\baselineskip}
+    \caption{
+        \onehalfspacing
+        Comparação do TTFT, TPOT e uso de memória do \texttt{llama.cpp} com as \emph{flags}
+        \texttt{--mmap} e \texttt{--no-mmap}, utilizando Clang + BLIS, quantização \texttt{Q4\_K\_M}
+        e 48 \emph{threads}.
+    }
+    \label{mmap-results}
+\end{figure}
+
+Assim, manteve-se o uso da \emph{flag} \texttt{--no-mmap} para as otimizações seguintes.
+
+\subsection{Quantização}
+
+De seguida, procurou-se avaliar se a quantização dos modelos poderia melhorar o desempenho dos
+mesmos, bem como as eventuais consequências para a qualidade das respostas geradas. Para tal,
+começou-se pela avaliação da qualidade das respostas dos modelos quantizados (Secção
+\ref{quality-tests}), cujos resultados sumários são apresentados na Tabela
+\ref{quantization-quality}.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|}
+        \cline{3-6}
+        \multicolumn{2}{c|}{}    &
+        \textbf{Pequenas (/ 30)} &
+        \textbf{Médias   (/ 30)} &
+        \textbf{Grandes  (/ 30)} &
+        \textbf{Total    (/ 90)} \\ \hline
+
+        \multirow{3}*{\textbf{SmolLM 2}}  & \texttt{Q3\_K\_M} & 12 &  2 &  5 & 19 \\
+                                          & \texttt{Q4\_K\_M} &  6 &  3 &  6 & 15 \\
+                                          & \texttt{Q8\_0}    & 12 &  4 &  3 & 19 \\ \hline
+
+        \multirow{3}*{\textbf{Gemma 3}}   & \texttt{Q3\_K\_M} & 27 & 24 & 26 & 77 \\
+                                          & \texttt{Q4\_K\_M} & 27 & 28 & 30 & 85 \\
+                                          & \texttt{Q8\_0}    & 26 & 26 & 27 & 79 \\ \hline
+
+        \multirow{3}*{\textbf{Llama 3.1}} & \texttt{Q3\_K\_M} & 30 & 23 & 29 & 82 \\
+                                          & \texttt{Q4\_K\_M} & 23 & 27 & 26 & 76 \\
+                                          & \texttt{Q8\_0}    & 29 & 23 & 29 & 81 \\ \hline
+    \end{tabular}
+
+    \caption{
+        \onehalfspacing
+        Pontuações sumárias das várias quantizações dos modelos num teste de análise de qualidade de
+        respostas. As pontuações discriminadas por \emph{prompt} e por avaliador podem ser
+        encontradas no Anexo \ref{all-prompt-evaluations}.
+    }
+    \label{quantization-quality}
+\end{table}
+
+Os resultados obtidos não permitiram extrair conclusões que auxiliem na seleção de uma quantização
+para os vários modelos, uma vez que não foi identificado qualquer padrão consistente na qualidade
+das respostas. Contrário às expectativas dos autores, não se verificou um aumento na pontuação com o
+aumento do número de bits por parâmetro.
+
+Como já foi referido, o número reduzido de \emph{prompts}, \emph{seeds} e avaliadores torna esta
+avaliação limitada, e suscetível a grande variabilidade nas pontuações devido a pequenas diferenças
+nas respostas, inerentes à natureza estocástica dos modelos. Por exemplo, o Llama 3.1 quantizado
+como \texttt{Q4\_K\_M} respondeu, para a \emph{prompt} S4, que o segundo planeta mais próximo do Sol
+era Mercúrio, o que resultou na perda de seis pontos na sua avaliação. Este resultado seria menos
+relevante caso fossem testadas várias \emph{seeds} de aleatoriedade, uma vez que o modelo não erra
+consistentemente.
+
+A única conclusão relevante foi que o Gemma 3 e o Llama 3.1, apesar de apresentarem um número de
+parâmetros muito distinto, exibem uma qualidade de respostas semelhante. Este resultado demonstra
+que o número de pesos de um modelo não é o único fator que determina a sua qualidade, e que a sua
+arquitetura e protocolo de treino também a influenciam significativamente.
+
+Outro problema identificado neste protocolo de testes foi a falta de replicabilidade. Embora todas
+as \emph{prompts} enviadas ao \texttt{llama-server} sejam independentes, e cada resposta gerada com
+uma \emph{seed} de aleatoriedade fixa, não se verificou que a resposta de cada modelo a cada
+\emph{prompt} fosse sempre a mesma. Este fenómeno manifestou-se para as \emph{prompts} de média e
+grande dimensão, em que a ordem de envio das \emph{prompts} influenciava as respostas obtidas. Os
+autores não tiveram oportunidade de analisar o código-fonte do \texttt{llama.cpp} para investigar
+este bug em profundidade, mas pretendem fazê-lo e reportá-lo futuramente.
+
+Deste modo, uma vez que os testes de qualidade das respostas não são replicáveis e não permitem uma
+comparação justa entre as diferentes quantizações, os seus resultados foram descartados. Assim, o
+desempenho das várias quantizações será o único critério considerado para a seleção da quantização a
+utilizar nas fases seguintes do processo de otimização em cascata. Os resultados dos testes de
+desempenho realizados (Secção \ref{performance-tests}) encontram-se na Figura
+\ref{quantization-results}.
+
+\begin{figure}[H]
+    \centering
+    \input{tex/quantization-ttft.tex}
+    \input{tex/quantization-tpot.tex}
+\end{figure}
+\begin{figure}[H]
+    \input{tex/quantization-mem.tex}
+    \vspace{-\baselineskip}
+    \caption{
+        \onehalfspacing
+        Comparação do TTFT, TPOT e uso de memória do \texttt{llama.cpp} entre diferentes
+        quantizações dos modelos, utilizando Clang + BLIS e 48 \emph{threads}.
+    }
+    \label{quantization-results}
+\end{figure}
+
+A análise do TTFT teve como principal foco o model Gemma 3, para \emph{prompts} de pequena e média
+dimensão, os únicos casos em que todos os \emph{tokens} da \emph{prompt} foram efetivamente todos
+processados nas medições recolhidas. Observa-se que o TTFT diminui à medida que o número de bits por
+parâmetro aumenta. Como o processamento da \emph{prompt}, que domina o TTFT, é uma operação
+\emph{compute-bound}, considera-se que o custo da conversão dos pesos quantizados para formatos
+numéricos suportados pelo processador seja a causa desta tendência. No entanto, validar esta
+hipótese exigiria um \emph{profiling} detalhado dos \emph{kernels} do \texttt{llama.cpp}, o que está
+fora do âmbito deste trabalho. No que diz respeito aos outros modelos, o TTFT é dominado por acessos
+à KV-Cache, o que justifica a semelhança dos valores de TTFT entre diferentes quantizações do mesmo
+modelo.
+
+Em relação ao TPOT, o único padrão consistente observado foi que, para o modelo Gemma 3, a
+quantização \texttt{Q8\_0} apresenta um tempo médio por geração de \emph{token} superior aos das
+restantes. Inesperadamente, não se verificou uma diferença significativa no desempenho entre as
+várias quantizações de outros modelos. A inferência de LLMs é um processo \emph{memory-bound}, e
+esperava-se que, como a quantização altera consideravelmente o tamanho do segmento de memória
+(pesos do modelo) que deve ser acedido cada \emph{token} gerado, houvesse uma maior diferença no
+TPOT de diferentes quantizações dos mesmos modelos. Esta discrepância será analisada mais adiante,
+na discussão do modelo de desempenho utilizado.
+
+A análise do uso de memória é direta: quanto maior o número de bits por parâmetro, maior será o
+tamanho do modelo e maior o uso de memória. No entanto, a diferença no uso de memória nunca é muito
+significativa, uma vez que a maior parte da memória é alocada para a KV Cache, e não para os pesos
+do modelo.
+
+Sem forma de corretamente avaliar nem desempenho dos modelos nem a qualidade das suas respostas,
+optou-se por se manter a quantização \texttt{Q4\_K\_M} para os testes seguintes.
+
+\subsection{\emph{Threading}}
+
+Após os ajustes à quantização dos modelos, procedeu-se ao ajuste do número de \emph{threads}
+utilizados pelo \texttt{llama.cpp}. As configurações testadas foram 12, 24, 36 e 48 \emph{threads},
+correspondendo, respetivamente, a um, dois, três, e quatro quartos do número total de \emph{cores}
+disponíveis. Além disso, testou-se também uma configuração de 44 \emph{threads}, com o objetivo de
+manter alguns núcleos livres para operações do sistema operativo, reduzindo assim a sua
+interferência no desempenho do \texttt{llama.cpp}.
+
+O sistema ARM utilizado possui memória de acesso não uniforme (NUMA) \cite{a64fx}, ou seja, o tempo
+de acesso à memória varia consoante a localização de cada núcleo do processador em relação aos
+bancos de memória. Por este motivo, também se procurou estudar a influência das políticas de
+alocação NUMA no desempenho dos modelos. O \texttt{llama.cpp} suporta duas políticas de alocação
+para sistemas NUMA:
+
+\begin{itemize}
+    \item \texttt{distribute}, em que os pesos do modelo e a KV cache são distribuídos pelos vários
+          nós NUMA;
+    \item \texttt{isolate}, em que o \texttt{llama.cpp} tenta alocar memória dentro de um único nó
+          NUMA sempre que possível.
+\end{itemize}
+
+Em testes preliminares, a política \texttt{isolate} revelou-se várias ordens de grandeza mais lenta
+do que a \texttt{distribute}, tanto em TTFT como em TPOT. Isto faz sentido, tendo em conta que
+utilizar apenas um banco de memória do processador (quando possível, em modelos como o SmolLM 2),
+reduz a largura de banda da mesma em quatro. Logo, os resultados da política \texttt{isolate} não
+serão aqui apresentados.
+
+Para as várias configurações de \emph{threading} selecionadas, foram realizados testes de desempenho
+(Secção \ref{performance-tests}), cujos resultados obtidos são apresentados na Figura
+\ref{threading-results}.
+
+\begin{figure}[H]
+    \input{tex/threading-ttft.tex}
+\end{figure}
+\begin{figure}[H]
+    \input{tex/threading-tpot.tex}
+    \caption{
+        \onehalfspacing
+        Comparação do TTFT e TPOT do \texttt{llama.cpp} entre configurações de \emph{threading},
+        utilizando Clang + BLIS e \texttt{Q4\_K\_M}. A configuração \textit{48T NO-NUMA} refere-se à
+        configuração utilizada em todas as medições até agora, correspondente ao número de
+        \emph{threads} de \emph{hardware} do sistema (48) sem qualquer política NUMA definida.
+    }
+    \label{threading-results}
+\end{figure}
+
+Como se pode observar, o desempenho dos modelos, tanto no TTFT como no TPOT, tende a melhorar com o
+aumento do número de \emph{threads} (ou seja, o TTFT e o TPOT diminuem). No entanto, este ganho não
+é linear: por exemplo não se observam \emph{speedups} de $4\times$ no TPOT entre execuções com 12 e
+48 \emph{threads}, devido à contenção no barramento de memória, uma vez que a geração de
+\emph{tokens} é um processo \emph{memory-bound}.
+
+Além disso, existem pequenas diferenças no desempenho dos modelos para números elevados de
+\emph{threads}, que podem ser exploradas para otimizar os resultados. Recorrendo a uma análise
+estatística semelhante à aplicada aos compiladores, é possível normalizar cada medição em relação à
+melhor medição da sua categoria (modelo e \emph{prompt}) e, subsequentemente, calcular a média
+geométrica destes valores normalizados para cada configuração de \emph{threads} (Tabela
+\ref{threading-geomean}).
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|c|c|r|r|}
+        \hline
+        \textbf{\emph{Threads}} & \textbf{NUMA}       & \textbf{TTFT} & \textbf{TPOT} \\ \hline
+                             48 & \texttt{distribute} &        1.0424 &        1.0063 \\ \hline
+                             44 & \texttt{distribute} &        1.0309 &        1.0293 \\ \hline
+                             48 & Não definida        &        1.1764 &        1.0502 \\ \hline
+                             36 & \texttt{distribute} &        1.1335 &        1.1158 \\ \hline
+                             24 & \texttt{distribute} &        1.4689 &        1.4236 \\ \hline
+                             12 & \texttt{distribute} &        2.4469 &        2.3407 \\ \hline
+    \end{tabular}
+    \caption{
+        \onehalfspacing
+        Média geométrica do TTFT e do TPOT, normalizados em relação à melhor configuração de
+        \emph{threading} por \emph{benchmark}.
+    }
+    \label{threading-geomean}
+\end{table}
+
+O objetivo é minimizar o TPOT, uma vez que o tempo de geração de \emph{tokens} é, geralmente, o
+principal contribuinte para o tempo de resposta dos modelos. Observa-se que o TPOT atinge o seu
+valor mínimo com 48 \emph{threads} e a política de NUMA \texttt{distribute}, resultando numa redução
+de 4.4\% no tempo médio por \emph{token} gerado, em comparação com a mesma configuração de
+\emph{threads} sem a política NUMA definida. Também se registaram ganhos, embora menores, na
+configuração de 44 \emph{threads}.
+
+Relativamente ao consumo de memória, como esperado, este mantém-se constante e independente do
+número de \emph{threads} utilizados.
+
+\subsection{Sumário}
+
+Em suma, neste processo de otimização, foi possível obter ganhos de 68.5\% (TPOT) em relação à pior
+configuração de compilação do \texttt{llama.cpp}, através da seleção do compilador Clang e da
+biblioteca de álgebra linear BLIS. Além disso, com ajustes à política de alocação NUMA, conseguiu-se
+ainda uma melhoria adicional de 4.4\% (TPOT). No entanto, não foi possível obter ganhos de
+desempenho através da quantização dos modelos ou da alteração da sua forma de carregamento para
+memória.
+
+\section{Modelação de Desempenho} % ----------------------------------------------------------------
+
+Para complementar a análise experimental, desenvolveu-se um modelo analítico simples, com o objetivo
+de prever o desempenho da inferência no nó ARM utilizado, com base em parâmetros do \emph{hardware}
+e da carga de trabalho. O modelo proposto foi inspirado no utilizado pela ferramenta
+\texttt{canirun.ai} \cite{can-i-run}, cuja iniciativa despertou interesse aos autores enquanto
+entusiastas de execução local de LLMs. O foco foi a modelação do desempenho apenas da geração de
+\emph{tokens}, uma vez que esta é geralmente responsável pela maior parte do tempo de resposta de
+uma LLM.
+
+O modelo do \texttt{canirun.ai} baseia-se num ``fator de eficiência'' para estimar a largura de 
+banda prática a partir do seu valor teórico. A principal diferença entre o modelo aqui apresentado e
+o original reside na omissão deste fator, e na utilização do \emph{benchmark} STREAM \cite{stream}
+para medir a largura de prática da memória.
+
+\subsection{Formulação do Modelo}
+
+A inferência de LLMs em fase de \emph{decoding} é uma operação \emph{memory-bound}
+\cite{memory-bound}: para gerar cada \emph{token}, o processador precisa de percorrer a totalidade
+dos pesos do modelo, resultando numa intensidade aritmética reduzida. Esta característica justifica
+a adoção de um modelo baseado em largura de banda, que, embora mais simples, não considera diversos
+outros fatores do \emph{hardware}, como processamento aritmético, caches, entre outros.
+
+O modelo de desempenho proposto baseia-se no tamanho da LLM e na largura de banda da memória. O
+tempo mínimo para a geração de um \emph{token} pode ser estimado como o tempo necessário para ler,
+uma única vez, todos os pesos do modelo a partir da memória:
+
+\begin{equation}
+    \text{TPOT} \;\geq\; \frac{M_{\text{RAM}}}{\text{BW}_{\text{mem}}},
+    \label{tpot-equation}
+\end{equation}
+
+onde $M_{\text{RAM}}$ representa o espaço de memória ocupado pelos pesos do modelo (em GiB), e
+$\text{BW}_{\text{mem}}$ a largura de banda efetiva da memória do nó (em GiB/s), medida diretamente
+através do \emph{benchmark} STREAM.
+
+A dimensão em memória dos pesos do modelo é, por sua vez, estimada a partir do número de pesos e do
+número de \emph{bits} por peso, por sua vez determinado pela quantização utilizada:
+
+\begin{equation}
+    M\_{\text{RAM}} \;=\; \frac{P \times b}{8 \times 1024^{3}} \cdot \alpha \;+\; c,
+    \label{vram-equation}
+\end{equation}
+
+\noindent onde $P$ é o número de parâmetros do modelo e $b$ o número de \emph{bits} por parâmetro. O
+elemento $\alpha = 1{,}1$ é um fator multiplicativo e o elemento $c = 0{.}5$ GiB é um termo aditivo:
+ambos contabilizam acessos a estruturas auxiliares também em memória, como a KV cache e
+\emph{runtime buffers}. Estes valores correspondem aos utilizados em \texttt{canirun.ai}.
+
+\subsection{Validação Experimental}
+
+Para avaliar a precisão do modelo, as suas previsões foram comparadas com os valores de TPOT
+observados nos testes de desempenho da configuração Clang + BLIS, com 48 \emph{threads} e política
+NUMA \texttt{distribute}. A largura de banda da memória do nó ARM, medida por meio do
+\emph{benchmark} STREAM, foi de \mbox{$\text{BW}_{\text{mem}} \approx 818$ GB/s}. Os resultados
+são apresentados na Tabela \ref{model-floor}.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|c|c|c|c|c|c|}
+        \hline
+        \textbf{Modelo}     &
+        \textbf{Quant.}     &
+        \textbf{Mem. (GiB)} &
+        \textbf{Pred. (ms)} &
+        \textbf{Obs. (ms)}  &
+        \textbf{Rácio}      &
+        \textbf{Erro (\%)}  \\ \hline
+
+        \texttt{Llama 3.1} & Q3\_K\_M &  2.794 &   4.534 & 60.900 & 13.43 & 92.55 \\ \hline
+        \texttt{Llama 3.1} & Q4\_K\_M &  3.725 &   5.879 & 75.900 & 12.91 & 92.25 \\ \hline
+        \texttt{Llama 3.1} & Q8\_0    &  7.451 &  11.258 & 74.600 &  6.63 & 84.91 \\ \hline
+        \texttt{Gemma 3}   & Q3\_K\_M &  1.397 &   2.517 & 46.900 & 18.63 & 94.63 \\ \hline
+        \texttt{Gemma 3}   & Q4\_K\_M &  1.863 &   3.189 & 52.500 & 16.46 & 93.92 \\ \hline
+        \texttt{Gemma 3}   & Q8\_0    &  3.725 &   5.879 & 51.900 &  8.83 & 88.67 \\ \hline
+        \texttt{SmolLM 2}  & Q3\_K\_M &  0.047 &   0.568 &  8.100 & 14.26 & 92.99 \\ \hline
+        \texttt{SmolLM 2}  & Q4\_K\_M &  0.063 &   0.591 &  9.300 & 15.74 & 93.65 \\ \hline
+        \texttt{SmolLM 2}  & Q8\_0    &  0.126 &   0.682 &  9.000 & 13.21 & 92.43 \\ \hline
+
+        \multicolumn{6}{|r|}{\textbf{MSE}} & \textbf{2090.371 ms\textsuperscript{2}} \\ \hline
+    \end{tabular}
+    \caption{Predições do modelo de desempenho analítico sem qualquer ajuste ($k = 1.0$).}
+    \label{model-floor}
+\end{table}
+
+Como se observa, os valores previstos subestimam os medidos, com rácios entre $7\times$ e
+$19\times$. Embora numericamente desfavorável, este resultado é consistente com a natureza do
+modelo: a equação \ref{tpot-equation} fornece um limite inferior teórico, e não uma estimativa do
+desempenho real. Para melhor caracterizar o desvio, ajustou-se um fator multiplicativo $k$, que
+minimiza o erro quadrático médio entre previsões e observações. O valor obtido de $k$ foi
+$k = 9.27$. Em outras palavras, para aproximar o modelo da realidade, seria necessário considerar
+uma perda de desempenho de $9.27\times$. Os resultados corrigidos são apresentados na Tabela
+\ref{model-fit}.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|c|c|c|c|c|c|}
+        \hline
+        \textbf{Modelo}     &
+        \textbf{Quant.}     &
+        \textbf{Mem. (GiB)} &
+        \textbf{Pred. (ms)} &
+        \textbf{Obs. (ms)}  &
+        \textbf{Rácio}      &
+        \textbf{Erro (\%)}  \\ \hline
+
+        \texttt{Llama 3.1} & Q3\_K\_M &  2.794 &  37.884 & 60.900 & 13.43 & 37.79 \\ \hline
+        \texttt{Llama 3.1} & Q4\_K\_M &  3.725 &  50.345 & 75.900 & 12.91 & 33.67 \\ \hline
+        \texttt{Llama 3.1} & Q8\_0    &  7.451 & 100.190 & 74.600 &  6.63 & 34.30 \\ \hline
+        \texttt{Gemma 3}   & Q3\_K\_M &  1.397 &  19.192 & 46.900 & 18.63 & 59.08 \\ \hline
+        \texttt{Gemma 3}   & Q4\_K\_M &  1.863 &  25.422 & 52.500 & 16.46 & 51.58 \\ \hline
+        \texttt{Gemma 3}   & Q8\_0    &  3.725 &  50.345 & 51.900 &  8.83 &  3.00 \\ \hline
+        \texttt{SmolLM 2}  & Q3\_K\_M &  0.047 &   1.131 &  8.100 & 14.26 & 86.04 \\ \hline
+        \texttt{SmolLM 2}  & Q4\_K\_M &  0.063 &   1.341 &  9.300 & 15.74 & 85.58 \\ \hline
+        \texttt{SmolLM 2}  & Q8\_0    &  0.126 &   2.182 &  9.000 & 13.21 & 75.75 \\ \hline
+
+        \multicolumn{6}{|r|}{\textbf{MSE}} & \textbf{388.822 ms\textsuperscript{2}} \\ \hline
+    \end{tabular}
+
+    \caption{
+        \onehalfspacing
+        Predições do modelo de desempenho analítico com multiplicador $k = 9.27$ ajustado por
+        minimização do MSE.
+    }
+    \label{model-fit}
+\end{table}
+
+Mesmo após o ajuste, o modelo permanece pouco preciso, com erros que variam entre $\sim$3\% e
+$\sim$86\%. Para investigar a origem destes desvios, o mesmo modelo foi aplicado a medições
+recolhidas localmente, num processador AMD Ryzen 7 5800H. Nesse cenário, as razões entre previsão e
+observação variaram entre $2\times$ e $3\times$, valores significativamente mais próximos do limite
+teórico do que aqueles obtidos no A64FX. Esta discrepância sugere que as limitações do modelo não
+residem apenas na sua formulação, que não contabiliza corretamente o custo de operações como
+dequantização e acesso à KV Cache, mas também na sua incapacidade de capturar características
+específicas da arquitetura A64FX, como o acesso não-uniforme à memória. Além disso, particularidades
+da arquitetura ARMv8 podem também estar envolvidas, uma vez que diferentes compiladores produziram
+desempenhos de geração de \emph{tokens} radicalmente distintos, o que não é esperado em
+\emph{kernels memory-bound}.
+
+Dada a magnitude dos desvios observados, não é viável utilizar este modelo para identificar algum
+\emph{bottleneck} dominante no processo de inferência ou orientar decisões de otimização, como era
+objetivo do enunciado. Uma análise rigorosa neste sentido requiriria um \emph{profiling} detalhado
+dos \emph{kernels} do \texttt{llama.cpp}.
+
+\section{Conclusões} % -----------------------------------------------------------------------------
+
+Neste trabalho, foi possível otimizar a inferência de LLMs em ambientes de CPU, utilizando a
+\emph{engine} de inferência \texttt{llama.cpp} em processadores Fujitsu A64FX. Foram exploradas
+diversas dimensões de otimização, destacando-se a configuração de compilação Clang + BLIS, que se
+revelou a mais promissora, com reduções no TPOT até 68.5\%. O ajuste da política NUMA também
+resultou num ganho de desempenho de 4.4\% (relativo à geração de \emph{tokens}) em comparação com a
+configuração padrão do \texttt{llama.cpp}.
+
+No entanto, as principais otimizações prenderam-se com a área de sistemas, e não nos parâmetros das
+LLMs em si. Por exemplo, não foi identificado qualquer padrão consistente no desempenho de modelos
+quantizados. Além disso, foram detetados problemas de replicabilidade e dimensão na metodologia
+de avaliação da qualidade das respostas da LLM, não tendo sido possível quantificar as diferenças na
+qualidade das respostas de modelos quantizados.
+
+Para trabalho futuro, mais parâmetros das LLMs poderiam ser ajustados para avaliar a sua influência
+no desempenho: tamanho do \emph{batch}, do \emph{\textmu-batch}, e do contexto, bem como os tipos de
+dados da KV cache. Estes dois últimos parâmetros podem ainda ser úteis a reduzir o consumo de
+memória da KV cache, mitigando alguma instabilidade de \emph{crashes} encontrada para modelos
+maiores. Nas dimensões da análise realizada, também seria pertinente avaliar o impacto de pedidos
+simultâneos no \emph{throughput} total do sistema.
+
+Do lado do \emph{llama.cpp}, consideramos que as principais melhorias a fazer não se prendem com
+técnicas de inferência, mas sim com uma melhor configuração-padrão. Por exemplo, o uso de
+\texttt{--no-mmap} para modelos pequenos poderá reduzir a frequência de \emph{crashes} encontrados,
+e o número máximo fixo de \emph{tokens} poderá evitar problemas com temperatura e respostas
+infindas. No que diz respeito a técnicas de inferência, as principais limitações do
+\texttt{llama.cpp} estão relacionadas com inferência distribuída, uma funcionalidade cujo suporte é
+ainda muito recente. Funcionalidades como \emph{prefill} e \emph{decode} desagregados seriam bem
+vindas, especialmente em sistemas heterogéneos como o Deucalion
+\cite{disaggregated-prefill-decode, llama-issue}. Em ambientes de nó único,
+\emph{Multi-Token Prediction} seria uma otimização viável, com implementações iniciais a mostrar
+resultados promissores \cite{reddit}.
+
+Quanto à modelação de desempenho, o modelo baseado em largura de banda memória da ferramenta
+\texttt{canirun.ai} foi adaptado, tendo o fator de eficiência sido substituído pela medição empírica
+da largura de banda de memória. No entanto, os resultados não foram satisfatórios: os valores
+previstos divergiram dos observados por fatores de 7$\times$ a 19$\times$, o que impossibilitou o
+uso do modelo para identificar \emph{bottlenecks} dominantes ou orientar futuras otimizações.
+
+Em suma, foi possível otimizar o desempenho de inferência de LLMs em processadores Fujitsu A64FX,
+mas acreditamos que ainda existe um grande potencial de otimização no ajuste de diversos parâmetros
+das LLMs, bem como muitas oportunidades para melhorar a modelação do desempenho de inferência.
+
+\section*{Financiamento} % -------------------------------------------------------------------------
+
+Este trabalho utilizou horas de computação atribuídas pela bolsa 2025.00010.HPCVLAB.UMINHO,
+financiada pela Fundação para a Ciência e a Tecnologia (FCT).
+
+\begin{thebibliography}{99}
+    \small
+    \bibitem{eurohpc}
+        K. Bhuyan, D. Marton, C. Guerreiro, and K. Meštrović,
+        ``The European High Performance Computing Joint Undertaking Infrastructure and Access Modes State-of-Play,''
+        \emph{Procedia Computer Science}, vol. 267, pp. 256-270, 2025.
+    \bibitem{deucalion}
+        National Advanced Computing Network,
+        ``DEUCALION.''
+        rnca.fccn.pt.
+        Accessed: May 12, 2026. [Online.] Available:
+        \url{https://rnca.fccn.pt/en/deucalion}
+    \bibitem{a64fx}
+        Fujitsu.
+        \emph{A64FX Microarchitecture Manual}, \emph{1.8.1}.
+        (2022).
+        Accessed: May 13, 2025. [Online]. Available:
+        \url{https://github.com/fujitsu/A64FX}
+    \bibitem{llama.cpp}
+        The GGML authors.
+        ``\texttt{llama.cpp}.''
+        github.com.
+        Accessed: May 13, 2026. [Online.] Available:
+        \url{https://github.com/ggml-org/llama.cpp}
+    \bibitem{memory-bound}
+        P. Recasens et al.,
+        ``Mind the Memory Gap: Unveiling GPU Bottlenecks in Large-Batch LLM Inference,''
+        2025, arXiv:2503.08311.
+    \bibitem{disaggregated-prefill-decode}
+        Perplexity.
+        ``Disaggregated Prefill and Decode.''
+        Accessed: May 14, 2026. [Online.] Available:
+        \url{https://www.perplexity.ai/hub/blog/disaggregated-prefill-and-decode}
+    \bibitem{attention}
+        A. Vaswani et al.,
+        ``Attention Is All You Need,''
+        2017, arXiv:1706.03762.
+    \bibitem{mlp}
+        F. Gloeckle, B. Idrissi, B. Rozière, D. Lopez-Paz, and G. Synnaeve,
+        ``Better \& Faster Large Language Models via Multi-token Prediction,''
+        2024, arXiv:2404.19737.
+    \bibitem{paged-attention}
+        W. Kwon et al.,
+        ``Efficient Memory Management for Large Language Model Serving with PagedAttention,''
+        2023, arXiv:2309.06180.
+    \bibitem{continuous-batching}
+        G. Yu, J. S. Jeong, G. Kim, S. Kim, and B. Chun,
+        ``Orca: A Distributed Serving System for Transformer-Based Generative Models,''
+        in \emph{16th USENIX Symposium on Operating Systems Design and Implementation},
+        2022, pp. 512-538.
+    \bibitem{smollm2}
+        Bartowski.
+        ``SmolLM-2-135M-Instruct-GGUF.''
+        huggingface.co.
+        Accessed: May 13, 2026. [Online.] Available:
+        \url{https://huggingface.co/bartowski/SmolLM2-135M-Instruct-GGUF}
+    \bibitem{gemma3}
+        LM-Kit.
+        ``Gemma-3-4B-Instruct-GGUF.''
+        huggingface.co.
+        Accessed: May 13, 2026. [Online.] Available:
+        \url{https://huggingface.co/lm-kit/gemma-3-4b-instruct-gguf}
+    \bibitem{llama}
+        Bartowski.
+        ``Meta-Llama-3.1-8B-Instruct-GGUF.''
+        huggingface.co.
+        Accessed: May 13, 2026. [Online.] Available:
+        \url{https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF}
+    \bibitem{instruct}
+        L. Ouyang et al.,
+        ``Training language models to follow instructions with human feedback,''
+        2022, arXiv:2203.02155.
+    \bibitem{completions-api}
+        The GGML authors.
+        ``LLAMA.cpp HTTP Server.''
+        github.com.
+        Accessed: May 13, 2026. [Online.] Available:
+        \url{
+            https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md#post-v1completions-openai-compatible-completions-api
+        }
+    \bibitem{free}
+        ``free(3) - Linux man page.''
+        die.net.
+        Accessed: May 13, 2026. [Online.] Available:
+        \url{https://linux.die.net/man/3/free}
+    \bibitem{gcc}
+        Free Software Foundation.
+        ``GCC, the GNU Compiler Collection.''
+        Accessed: May. 13, 2026. [Online]. Available:
+        \url{https://gcc.gnu.org}.
+    \bibitem{clang}
+        LLVM Developer Group.
+        ``Clang: a C language family frontend for LLVM.''
+        Accessed: May. 13, 2026. [Online]. Available:
+        \url{https://clang.llvm.org}.
+    \bibitem{llama-build}
+        The GGML authors.
+        ``Build llama.cpp locally.''
+        github.com.
+        Accessed: May 13, 2026. [Online.] Available:
+        \url{https://github.com/ggml-org/llama.cpp/blob/master/docs/build.md}
+    \bibitem{openblas}
+        X. Zhang, M. Kroeker.
+        ``OpenBLAS -- An optimized BLAS library.''
+        openmathlib.org.
+        Accessed: May 13, 2026. [Online.] Available:
+        \url{https://www.openmathlib.org/OpenBLAS}
+    \bibitem{blis}
+        F. van Zee and R. van de Geijn,
+        ``BLIS: A Framework for Rapidly Instantiating BLAS Functionality'',
+        \emph{ACM Transactions on Mathematical Software}, vol. 41, no. 3, pp. 1-14, 2015.
+    \bibitem{fjblas}
+        Fujitsu.
+        ``Fujitsu Software Technical Computing Suite V4.0L20 -- Development Studio -- BLAS LAPACK ScaLAPACK User's Guide.''
+        r-ccs.riken.jp.
+        Accessed: May 13, 2026. [Online.] Available:
+        \url{https://www.r-ccs.riken.jp/fugaku/docs/manual/en/lang/j2ul-2561-01enz0.pdf}
+    \bibitem{fcc}
+        Fujitsu.
+        ``Fujitsu Software Technical Computing Suite V4.0L20 -- Development Studio -- C++ User's Guide.''
+        r-ccs.riken.jp.
+        Accessed: May 13, 2026. [Online.] Available:
+        \url{https://www.r-ccs.riken.jp/fugaku/docs/manual/en/lang/j2ul-2561-01enz0.pdf}
+    \bibitem{cmake-blas}
+        Kitware.
+        ``FindBLAS.''
+        cmake.org.
+        Accessed: May 13, 2026. [Online.] Available:
+        \url{https://cmake.org/cmake/help/latest/module/FindBLAS.html}
+    \bibitem{can-i-run}
+        M. Durán,
+        ``Can I Run AI locally?,''
+        Accessed: May 14, 2026. [Online.] Available:
+        \url{https://www.canirun.ai/why}
+    \bibitem{stream}
+        J. McCalpin,
+        ``Memory Bandwidth and Machine Balance in Current High Performance Computers,'' in
+        \emph{IEEE Computer Society Technical Committee on Computer Architecture (TCCA) Newsletter},
+        1995.
+    \bibitem{llama-issue}
+        G. Gerganov.
+        ``Server: disaggregated prefill/decode support.''
+        github.com.
+        Accessed: May 14, 2026. [Online.] Available:
+        \url{https://github.com/ggml-org/llama.cpp/issues/21266}
+    \bibitem{reddit}
+        Atomic Bot.
+        ``Multi-Token Prediction (MTP) for LLaMA.cpp - Gemma 4 speedup by 40\%.''
+        reddit.com.
+        Accessed: May 14, 2026. [Online.] Available:
+        \url{
+            https://www.reddit.com/r/LocalLLaMA/comments/1t6se6r/multitoken_prediction_mtp_for_llamacpp_gemma_4
+        }
+\end{thebibliography}
+
+\pagebreak
+\begin{appendix}
+
+\section{\emph{Prompts} Utilizadas para Testes}
+\label{prompts}
+\input{tex/prompts.tex}
+
+\section{Resultados dos Testes de Qualidade de Resposta}
+\label{all-prompt-evaluations}
+\bgroup
+    \renewcommand{\arraystretch}{1.25}
+    \input{tex/evaluations.tex}
+\egroup
+
+\end{appendix}
+
+\end{document}

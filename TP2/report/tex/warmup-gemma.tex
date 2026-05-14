@@ -1,0 +1,86 @@
+\begin{tikzpicture}
+    \begin{axis}[
+        % Plot dimensions
+        width  = 0.3\textwidth,
+        height = 6cm,
+        % Labels
+        title  = {Gemma 3},
+        xlabel = {Run},
+        ylabel = {TTFT (ms)},
+        % Axes
+        xmin        = 1,
+        xmax        = 10,
+        xtick       = {1,2,3,4,5,6,7,8,9,10},
+        ymode       = log,
+        log basis y = 10,
+        % Grid
+        xmajorgrids = true,
+        grid style  = {dashed, gray!80},
+        % Legend
+        legend style={
+            at     = {(0.98, 0.98)},
+            anchor = north east,
+            font   = \small,
+        }
+    ]
+
+        % Small data
+        \addplot+[
+            thick,
+            color        = BrickRed,
+            mark         = *,
+            mark options = {fill = BrickRed, draw = BrickRed}
+        ] coordinates {
+            (1,  517.56)
+            (2,  459.28)
+            (3,  464.08)
+            (4,  465.68)
+            (5,  458.19)
+            (6,  462.95)
+            (7,  456.96)
+            (8,  461.35)
+            (9,  469.27)
+            (10, 486.19)
+        };
+
+        % Medium data
+        \addplot+[
+            thick,
+            color        = NavyBlue,
+            mark         = square*,
+            mark options = {fill = NavyBlue, draw = NavyBlue}
+        ] coordinates {
+            (1,  791.24)
+            (2,  709.86)
+            (3,  710.15)
+            (4,  707.55)
+            (5,  711.77)
+            (6,  709.37)
+            (7,  718.21)
+            (8,  708.08)
+            (9,  711.59)
+            (10, 822.02)
+        };
+
+        % Large data
+        \addplot+[
+            thick,
+            color        = orange,
+            mark         = triangle*,
+            mark options = {fill = orange, draw = orange}
+        ] coordinates {
+            (1, 7271.87)
+            (2,  265.72)
+            (3,  300.66)
+            (4,  221.88)
+            (5,  222.76)
+            (6,  309.61)
+            (7,  223.49)
+            (8,  226.76)
+            (9,  228.09)
+            (10, 290.04)
+        };
+
+        \legend{S0, M0, L0}
+    \end{axis}
+\end{tikzpicture}
