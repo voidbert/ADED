@@ -1,32 +1,31 @@
-# LLM Inference Optimization in Systems Fujitsu A64FX
+# LLM Inference Optimization on Systems Fujitsu A64FX
 
 [Assignment](Assignment.pdf) about optimizing and modeling LLM inference performance on CPU
-architectures.
+architectures. See our [assignment report](report/report.pdf).
 
 ## Project Structure
 
-* `/jobs`   : SLURM shell scripts for automated model deployment and testing;
-* `/scripts`: Python scripts for statistical post-processing;
-* `/results`: Measurement data (TTFT, TPOT, Throughput);
-* `/prompts`: Standardized prompt dataset (Small, Medium, and Large categories).
+ - `jobs/`   : SLURM jobs for automated testing;
+ - `scripts/`: Python scripts for statistical post-processing;
+ - `results/`: Measurement data across configurations (TTFT, TPOT, Throughput);
+ - `prompts/`: Prompt dataset for response evaluation.
 
 ## Reproduction Guide
 
-To reproduce the findings presented in the research report, execute the following steps in order in
-the Deucalion supercomputer, inside the `/jobs` directory:
+To reproduce our findings, execute the following steps on the Deucalion supercomputer inside the
+`jobs/` directory:
 
 ### 1. Model Setup
 
-Ensure the models are dowloaded to your system:
+Download the necessary models from HuggingFace:
 
 ```console
 $ sbatch download-models.sh
 ```
 
-### 2. Llama.cpp Compilation
+### 2. `llama.cpp` Compilation
 
-Build the inference engine optimized for the A64FX architecture. The provided script handles
-different compiler and BLAS library combinations.
+Build `llama.cpp`. The provided script handles different compiler and BLAS library combinations:
 
 ```console
 $ sbatch build-llama.sh
@@ -47,8 +46,8 @@ $ sbatch warmup-test.sh
 
 ### Quality Test 
 
-Collects full model responses for all prompt categories to enable qualitative assessment and human
-evaluation of output coherence and accuracy.
+Collect full model responses for our prompt dataset, to enable later human evaluation of output
+coherence and accuracy:
 
 ```console
 $ sbatch quality-test.sh
@@ -56,9 +55,7 @@ $ sbatch quality-test.sh
 
 ### Memory Mapping (mmap) Evaluation
 
-Assess the impact of memory mapping on latency and memory usage. This helps determine whether
-loading the model into RAM or using disk-backed mapping is more efficient for the A64FX memory
-subsystem.
+Assess the impact of memory mapping on TPOT, TTFT, and memory usage:
 
 ```console
 $ sbatch mmap-test.sh
@@ -66,8 +63,7 @@ $ sbatch mmap-test.sh
 
 ### Multi-threading Scaling
 
-Analyze how inference performance scales with the number of threads and NUMA policies. This test
-evaluates the optimal thread count for the ARM-based A64FX cores.
+Analyze how inference performance varies with NUMA policy and how it scales with thread count:
 
 ```console
 & sbatch threading-test.sh
@@ -75,21 +71,22 @@ evaluates the optimal thread count for the ARM-based A64FX cores.
 
 ## Statistical Analysis and Visualization
 
-Once all jobs are completed, use the Python scripts to process the raw data. These scripts generate
-the tables with the data used in the research report.
+Once all jobs have completed, use provided the Python scripts to process the raw data. These scripts
+generate tables similar to these present in our report, as well as data for plots.
 
-The analysis is divided into four main areas:
-
- - Warmup & Stability:   `warmup-analysis.py`
- - Compiler Performance: `compiler-analysis.py`
- - Memory Management:    `mmap-analysis.py`
- - Quantization Impact:  `quantization-analysis.py`
- - Threading Impact:     `threading-analysis.py`
+Before running any script, setup a Python virtual environment and install DuckDB:
 
 ```console
 $ module load Python/3.14.2-GCCcore-15.2.0
 $ python -m venv .venv
 $ . .venv/bin/activate
 $ pip install duckdb
-$ ./ANALYSIS-SCRIPT.py ../results/RESULTS_FOLDER
 ```
+
+Then see the following scripts for more details on what they do and how to execute them:
+
+ - Warmup & Stability:   `warmup-analysis.py`
+ - Compiler Performance: `compiler-analysis.py`
+ - Memory Management:    `mmap-analysis.py`
+ - Quantization Impact:  `quantization-analysis.py`
+ - Threading Impact:     `threading-analysis.py`
